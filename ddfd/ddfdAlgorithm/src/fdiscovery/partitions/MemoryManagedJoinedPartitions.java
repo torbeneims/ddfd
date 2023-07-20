@@ -1,17 +1,14 @@
 package fdiscovery.partitions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
+import com.sun.tools.javac.jvm.Gen;
 import fdiscovery.columns.ColumnCollection;
 //import fdiscovery.pruning.PartitionEquivalences;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 
-public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<ColumnCollection, Partition>> {
+public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<Map<ColumnCollection, Partition>> {
 
 	private static final long serialVersionUID = -7385828030861564827L;
 	private static final int PARTITION_THRESHOLD = 10000;
@@ -22,6 +19,10 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<Co
 	private TObjectIntHashMap<ColumnCollection> usageCounter;
 	private LinkedList<ColumnCollection> leastRecentlyUsedPartitions;
 	private TObjectIntHashMap<ColumnCollection> totalCount;
+
+	protected Map<ColumnCollection, Partition> createPartitionMap() {
+		return new HashMap<ColumnCollection, Partition>();
+	}
 	
 	public MemoryManagedJoinedPartitions(int numberOfColumns) {
 		this.numberOfColumns = numberOfColumns;
@@ -32,7 +33,18 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<Co
 			this.totalCount = new TObjectIntHashMap<>();
 		}
 		for (long cardinality = 1; cardinality <= this.numberOfColumns; cardinality++) {
-			this.put(cardinality, new HashMap<ColumnCollection, Partition>());
+			this.put(cardinality, createPartitionMap());
+		}
+	}
+
+	/**
+	 * Creates a new instance initialized with the given single column partitions.
+	 * @param fileBasedPartitions Atomic partitions used for initialization.
+	 */
+	public MemoryManagedJoinedPartitions(FileBasedPartitions fileBasedPartitions) {
+		this(fileBasedPartitions.size());
+		for (int columnIndex = 0; columnIndex < this.numberOfColumns; columnIndex++) {
+			this.addPartition(fileBasedPartitions.get(columnIndex));
 		}
 	}
 
@@ -57,7 +69,7 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<Co
 	 
 	public int getCount() {
 		int cumulatedCount = 0;
-		for (HashMap<ColumnCollection, Partition> elementsOfLevel : this.valueCollection()) {
+		for (Map<ColumnCollection, Partition> elementsOfLevel : this.valueCollection()) {
 			cumulatedCount += elementsOfLevel.size();
 		}
 		return cumulatedCount;
@@ -65,6 +77,7 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<Co
 	
 	@SuppressWarnings("unused")
 	public Partition get(ColumnCollection key) {
+		assert key.cardinality() >= 1 : "Cardinality of key must be at least 1, key is " + key;
 		Partition result = this.get(key.cardinality()).get(key);
 		if (USE_MEMORY_MANAGEMENT && result != null) {
 			this.usageCounter.adjustValue(key, 1);
@@ -127,15 +140,16 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<Co
 		long cardinalityOfPartitionIndices = partitionKey.cardinality();
 		this.get(cardinalityOfPartitionIndices).remove(partitionKey);
 	}
-	
-	public void addPartitions(ArrayList<Partition> partitions) {
-		for (Partition partition : partitions) {
-			this.addPartition(partition);
-		}
+
+	public void addPartitions(List<? extends Partition> partitions) {
+		partitions.forEach(this::addPartition);
 	}
 	
 	public Partition getAtomicPartition(int columnIndex) {
-		return this.get(0).get(this.key.clearAllCopy().setCopy(columnIndex));
+		// TODO check relation handling
+		Partition result = this.get(1).get(new ColumnCollection(columnIndex));
+		assert result != null;
+		return result;
 	}
 	
 	public ArrayList<Partition> getBestMatchingPartitions(ColumnCollection path) {
@@ -148,7 +162,7 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<HashMap<Co
 		outer: while (notCoveredColumns > 0) {
 			// we don't need to check the sizes above the last match size again
 			for (long collectionCardinality = Math.min(notCoveredColumns, sizeOfLastMatch); collectionCardinality > 0; collectionCardinality--) {
-				HashMap<ColumnCollection, Partition> candidatesOfLevel = this.get(collectionCardinality);
+				Map<ColumnCollection, Partition> candidatesOfLevel = this.get(collectionCardinality);
 				for (ColumnCollection candidateOfLevel : candidatesOfLevel.keySet()) {
 					if (candidateOfLevel.isSubsetOf(pathCopy)) {
 //						bestMatchingPartitions.add(candidatesOfLevel.get(candidateOfLevel));
