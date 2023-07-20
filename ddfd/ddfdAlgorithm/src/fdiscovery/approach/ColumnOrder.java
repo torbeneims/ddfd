@@ -14,8 +14,7 @@ public class ColumnOrder {
 	
 	public ColumnOrder(FileBasedPartitions fileBasedPartitions) {
 		this.order = new int[fileBasedPartitions.size()];
-		ArrayList<FileBasedPartition> partitions = new ArrayList<>();
-		partitions.addAll(fileBasedPartitions);
+        ArrayList<FileBasedPartition> partitions = new ArrayList<>(fileBasedPartitions);
 		Collections.sort(partitions);
 //		Collections.sort(partitions, Collections.reverseOrder());
 		int orderIndex = 0;
