@@ -95,7 +95,36 @@ public class FunctionalDependencies extends THashMap<ColumnCollection, ColumnCol
 		}
 		rhs.set(rhsIndex);
 	}
-	
+
+	/**
+	 * Inserts a minimal dependency by modifying existing entries in the data structure.
+	 * If the given new dependency is a subset of any existing LHS entry and the corresponding RHS entry is true,
+	 * the RHS entry is set to false.
+	 * If the given new dependency is a proper superset of any existing LHS entry and the corresponding RHS entry is true,
+	 * the new dependency is added to the data structure.
+	 *
+	 * @param newDep the new dependency to be inserted
+	 * @param rhs    the index of the RHS
+	 */
+	public void insertMinimalDependency(ColumnCollection newDep, int rhs) {
+
+		Set<ColumnCollection> lhsKeys = new HashSet<>(this.keySet());
+
+		for (ColumnCollection lhs : lhsKeys) {
+			if (newDep.isSubsetOf(lhs) && this.get(lhs).get(rhs)) {
+				this.get(lhs).clear(rhs);
+			}
+		}
+
+		for (ColumnCollection lhs : this.keySet()) {
+			if (newDep.isProperSupersetOf(lhs) && this.get(lhs).get(rhs)) {
+				return;
+			}
+		}
+
+		this.addRHSColumn(newDep, rhs);
+	}
+
 	public int getCount() {
 		int fdCount = 0;
 		
