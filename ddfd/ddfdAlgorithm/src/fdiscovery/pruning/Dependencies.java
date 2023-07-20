@@ -14,7 +14,7 @@ public class Dependencies extends PruneHashSet {
 		super(numberOfColumns);
 	}
 
-	public THashSet<ColumnCollection> getPrunedSubsets(THashSet<ColumnCollection> subsets) {
+	public THashSet<ColumnCollection> getPrunedSubsets(Iterable<ColumnCollection> subsets) {
 		THashSet<ColumnCollection> prunedSubsets = new THashSet<>();
 		for (ColumnCollection subset : subsets) {
 			if (this.isRepresented(subset)) {

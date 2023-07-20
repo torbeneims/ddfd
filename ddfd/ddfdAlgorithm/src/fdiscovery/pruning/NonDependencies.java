@@ -14,7 +14,7 @@ public class NonDependencies extends PruneHashSet {
 		super(numberOfColumns);
 	}
 	
-	public THashSet<ColumnCollection> getPrunedSupersets(THashSet<ColumnCollection> supersets) {
+	public THashSet<ColumnCollection> getPrunedSupersets(Iterable<ColumnCollection> supersets) {
 		THashSet<ColumnCollection> prunedSupersets = new THashSet<>();
 		for (ColumnCollection superset : supersets) {
 			if (this.isRepresented(superset)) {
