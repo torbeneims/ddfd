@@ -19,6 +19,22 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		return columnCollection;
 	}
 
+	/**
+	 * Creates a new ColumnCollection from a bitmap.
+	 *
+	 * @param bitmap the bitmap representing the bits to include in the ColumnCollection
+	 * @return the ColumnCollection containing the bits from the bitmap
+	 */
+	public static ColumnCollection fromBits(long bitmap) {
+		ColumnCollection columnCollection = new ColumnCollection();
+		for (int i = 0; (bitmap << i) > 0; i++) {
+			if ((bitmap & (1L << i)) != 0) {
+				columnCollection.set(i);
+			}
+		}
+		return columnCollection;
+	}
+
 	private static int getFormatStringWidth(int numberOfColumns) {
 		return (int) Math.ceil(Math.log10(numberOfColumns));
 	}
