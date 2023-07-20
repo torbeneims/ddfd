@@ -4,12 +4,12 @@ import fdiscovery.columns.ColumnCollection;
 
 public class Seed {
 
-	private ColumnCollection indices;
-	private int additionalColumnIndex;
+	private final ColumnCollection indices;
+	private final int additionalColumnIndex;
 	
-	public Seed(ColumnCollection indices, int addtionalColumnIndex) {
-		this.indices = indices.setCopy(addtionalColumnIndex);
-		this.additionalColumnIndex = addtionalColumnIndex;
+	public Seed(ColumnCollection indices, int additionalColumnIndex) {
+		this.indices = indices.setCopy(additionalColumnIndex);
+		this.additionalColumnIndex = additionalColumnIndex;
 	}
 	
 	public Seed(ColumnCollection indices) {
