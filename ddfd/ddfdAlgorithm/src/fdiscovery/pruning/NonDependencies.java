@@ -4,14 +4,15 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import fdiscovery.columns.ColumnCollection;
+import fdiscovery.columns.Relation;
 import gnu.trove.set.hash.THashSet;
 
 public class NonDependencies extends PruneHashSet {
 
 	private static final long serialVersionUID = 3160579586722511675L;
 
-	public NonDependencies(int numberOfColumns) {
-		super(numberOfColumns);
+	public NonDependencies(Relation relation) {
+		super(relation);
 	}
 	
 	public THashSet<ColumnCollection> getPrunedSupersets(Iterable<ColumnCollection> supersets) {
@@ -51,7 +52,7 @@ public class NonDependencies extends PruneHashSet {
 		return false;
 	}
 
-	public void add(ColumnCollection newEntry) {
+	public void add(ColumnCollection newEntry, Relation relation) {
 		outer: for (ColumnCollection key : this.keySet()) {
 			if (key.isSubsetOf(newEntry)) {
 				HashSet<ColumnCollection> depsForKey = this.get(key);
@@ -67,6 +68,6 @@ public class NonDependencies extends PruneHashSet {
 				depsForKey.add(newEntry);
 			}
 		}
-		this.rebalance();
+		this.rebalance(relation);
 	}
 }

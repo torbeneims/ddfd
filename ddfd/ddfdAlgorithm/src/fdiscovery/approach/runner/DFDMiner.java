@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Stack;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import fdiscovery.columns.Relation;
 import org.apache.commons.cli.CommandLine;
 
 
@@ -47,6 +49,8 @@ public class DFDMiner extends Miner implements Runnable {
 	private NonDependencies nonDependencies;
 	private MemoryManagedJoinedPartitions joinedPartitions;
 
+	private final Relation relation;
+
 	public static void main(String[] args) {
 		createColumDirectory();
 
@@ -83,12 +87,13 @@ public class DFDMiner extends Miner implements Runnable {
 	public DFDMiner(SVFileProcessor table) throws OutOfMemoryError {
 		this.observations = new Observations();
 		this.numberOfColumns = table.getNumberOfColumns();
+		this.relation = new Relation(numberOfColumns);
 		this.trace = new Stack<>();
 		this.seeds = new Stack<>();
 		this.minimalDependencies = new FunctionalDependencies();
 		this.maximalNonDependencies = new FunctionalDependencies();
-		this.dependencies = new Dependencies(this.numberOfColumns);
-		this.nonDependencies = new NonDependencies(this.numberOfColumns);
+		this.dependencies = new Dependencies(relation);
+		this.nonDependencies = new NonDependencies(relation);
 		this.joinedPartitions = new MemoryManagedJoinedPartitions(this.numberOfColumns);
 		this.fileBasedPartitions = new FileBasedPartitions(table);
 		this.columnOrder = new ColumnOrder(fileBasedPartitions);
@@ -109,7 +114,7 @@ public class DFDMiner extends Miner implements Runnable {
 		for (FileBasedPartition fileBasedPartition : this.fileBasedPartitions) {
 			if (fileBasedPartition.isUnique()) {
 				ColumnCollection uniquePartitionIndices = fileBasedPartition.getIndices();
-				ColumnCollection RHS = uniquePartitionIndices.complementCopy();
+				ColumnCollection RHS = uniquePartitionIndices.complementCopy(relation);
 				this.minimalDependencies.put(uniquePartitionIndices, RHS);
 				// add unique columns to minimal uniques
 				keys.add(uniquePartitionIndices);
@@ -119,8 +124,8 @@ public class DFDMiner extends Miner implements Runnable {
 		// do this for all RHS
 		for (int currentRHSIndex = 0; currentRHSIndex < this.numberOfColumns; currentRHSIndex++) {
 
-			this.dependencies = new Dependencies(numberOfColumns);
-			this.nonDependencies = new NonDependencies(numberOfColumns);
+			this.dependencies = new Dependencies(relation);
+			this.nonDependencies = new NonDependencies(relation);
 			this.trace.clear();
 			this.observations.clear();
 
@@ -129,7 +134,7 @@ public class DFDMiner extends Miner implements Runnable {
 					ColumnCollection lhs = new ColumnCollection(numberOfColumns);
 					lhs.set(lhsIndex);
 					if (keys.contains(lhs)) {
-						this.dependencies.add(lhs);
+						this.dependencies.add(lhs, relation);
 						this.observations.put(lhs, Observation.MINIMAL_DEPENDENCY);
 					}
 				}
@@ -139,7 +144,7 @@ public class DFDMiner extends Miner implements Runnable {
 			currentRHS.set(currentRHSIndex);
 
 			// generate seeds
-			for (int partitionIndex : columnOrder.getOrderHighDistinctCount(currentRHS.complementCopy())) {
+			for (int partitionIndex : columnOrder.getOrderHighDistinctCount(currentRHS.complementCopy(relation), relation)) {
 				if (partitionIndex != currentRHSIndex) {
 					FileBasedPartition lhsPartition = this.fileBasedPartitions.get(partitionIndex);
 					this.seeds.push(new Seed(lhsPartition.getIndices()));
@@ -171,7 +176,7 @@ public class DFDMiner extends Miner implements Runnable {
 //							System.out.println(String.format("[2]Current [%s]%s\t[%s]", (char) (currentRHSIndex + 65), currentSeed, observationOfLHS));
 							if (observationOfLHS.isCandidate()) {
 								if (observationOfLHS.isDependency()) {
-									Observation updatedDependencyType = this.observations.updateDependencyType(currentSeed.getIndices());
+									Observation updatedDependencyType = this.observations.updateDependencyType(currentSeed.getIndices(), relation);
 									// System.out.println(String.format("\tupdated:\t%s",
 									// updatedDependencyType));
 									this.observations.put(lhsIndices, updatedDependencyType);
@@ -181,7 +186,7 @@ public class DFDMiner extends Miner implements Runnable {
 										this.minimalDependencies.addRHSColumn(lhsIndices, currentRHSIndex);
 									}
 								} else {
-									Observation updatedNonDependencyType = this.observations.updateNonDependencyType(currentSeed.getIndices(), currentRHSIndex);
+									Observation updatedNonDependencyType = this.observations.updateNonDependencyType(currentSeed.getIndices(), currentRHSIndex, relation);
 									this.observations.put(lhsIndices, updatedNonDependencyType);
 									// System.out.println(String.format("\tupdated:\t%s",
 									// updatedNonDependencyType));
@@ -205,15 +210,15 @@ public class DFDMiner extends Miner implements Runnable {
 	private Observation checkDependencyAndStoreIt(Seed seed, int currentRHSIndex) {
 		if (nonDependencies.isRepresented(seed.getIndices())) {
 			// System.out.println("Skip because of nonDependency");
-			Observation observationOfLHS = this.observations.updateNonDependencyType(seed.getIndices(), currentRHSIndex);
+			Observation observationOfLHS = this.observations.updateNonDependencyType(seed.getIndices(), currentRHSIndex, relation);
 			this.observations.put(seed.getIndices(), observationOfLHS);
-			this.nonDependencies.add(seed.getIndices());
+			this.nonDependencies.add(seed.getIndices(), relation);
 			return observationOfLHS;
 		} else if (dependencies.isRepresented(seed.getIndices())) {
 			// System.out.println("Skip because of dependency");
-			Observation observationOfLHS = this.observations.updateDependencyType(seed.getIndices());
+			Observation observationOfLHS = this.observations.updateDependencyType(seed.getIndices(), relation);
 			this.observations.put(seed.getIndices(), observationOfLHS);
-			this.dependencies.add(seed.getIndices());
+			this.dependencies.add(seed.getIndices(), relation);
 			return observationOfLHS;
 		}
 
@@ -264,14 +269,14 @@ public class DFDMiner extends Miner implements Runnable {
 		}
 
 		if (Partition.representsFD(currentLHSPartition, currentLHSJoinedRHSPartition)) {
-			Observation observationOfLHS = this.observations.updateDependencyType(seed.getIndices());
+			Observation observationOfLHS = this.observations.updateDependencyType(seed.getIndices(), relation);
 			this.observations.put(seed.getIndices(), observationOfLHS);
-			this.dependencies.add(seed.getIndices());
+			this.dependencies.add(seed.getIndices(), relation);
 			return observationOfLHS;
 		}
-		Observation observationOfLHS = this.observations.updateNonDependencyType(seed.getIndices(), currentRHSIndex);
+		Observation observationOfLHS = this.observations.updateNonDependencyType(seed.getIndices(), currentRHSIndex, relation);
 		this.observations.put(seed.getIndices(), observationOfLHS);
-		this.nonDependencies.add(seed.getIndices());
+		this.nonDependencies.add(seed.getIndices(), relation);
 		return observationOfLHS;
 	}
 
@@ -283,7 +288,7 @@ public class DFDMiner extends Miner implements Runnable {
 		ArrayList<ColumnCollection> newDeps = new ArrayList<>(numberOfColumns * deps.size());
 
 		for (ColumnCollection maximalNonDependency : currentMaximalNonDependencies) {
-			ColumnCollection complement = maximalNonDependency.setCopy(currentRHSIndex).complement();
+			ColumnCollection complement = maximalNonDependency.setCopy(currentRHSIndex).complement(relation);
 			if (deps.isEmpty()) {
 				ColumnCollection emptyColumnIndices = new ColumnCollection(numberOfColumns);
 				for (int complementColumnIndex : complement.getSetBits()) {
@@ -363,7 +368,7 @@ public class DFDMiner extends Miner implements Runnable {
 		Observation observationOfSeed = this.observations.get(currentSeed.getIndices());
 
 		if (observationOfSeed == Observation.CANDIDATE_MINIMAL_DEPENDENCY) {
-			THashSet<ColumnCollection> uncheckedSubsets = this.observations.getUncheckedMaximalSubsets(currentSeed.getIndices(), columnOrder);
+			THashSet<ColumnCollection> uncheckedSubsets = this.observations.getUncheckedMaximalSubsets(currentSeed.getIndices(), columnOrder, relation);
 			THashSet<ColumnCollection> prunedNonDependencySubsets = nonDependencies.getPrunedSupersets(uncheckedSubsets);
 			for (ColumnCollection prunedNonDependencySubset : prunedNonDependencySubsets) {
 				observations.put(prunedNonDependencySubset, Observation.NON_DEPENDENCY);
@@ -380,7 +385,7 @@ public class DFDMiner extends Miner implements Runnable {
 				}
 			}
 		} else if (observationOfSeed == Observation.CANDIDATE_MAXIMAL_NON_DEPENDENCY) {
-			THashSet<ColumnCollection> uncheckedSupersets = this.observations.getUncheckedMinimalSupersets(currentSeed.getIndices(), currentRHSIndex, columnOrder);
+			THashSet<ColumnCollection> uncheckedSupersets = this.observations.getUncheckedMinimalSupersets(currentSeed.getIndices(), currentRHSIndex, columnOrder, relation);
 			THashSet<ColumnCollection> prunedNonDependencySupersets = nonDependencies.getPrunedSupersets(uncheckedSupersets);
 			THashSet<ColumnCollection> prunedDependencySupersets = dependencies.getPrunedSubsets(uncheckedSupersets);
 			for (ColumnCollection prunedNonDependencySuperset : prunedNonDependencySupersets) {

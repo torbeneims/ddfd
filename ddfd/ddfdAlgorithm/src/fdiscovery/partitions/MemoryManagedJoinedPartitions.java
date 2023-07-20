@@ -2,9 +2,7 @@ package fdiscovery.partitions;
 
 import java.util.*;
 
-import com.sun.tools.javac.jvm.Gen;
 import fdiscovery.columns.ColumnCollection;
-//import fdiscovery.pruning.PartitionEquivalences;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 

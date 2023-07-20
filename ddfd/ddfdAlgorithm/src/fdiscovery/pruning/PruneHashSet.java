@@ -5,29 +5,33 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import fdiscovery.columns.ColumnCollection;
+import fdiscovery.columns.Relation;
 
 public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollection>> implements PruneInterface {
 
 	private static final long serialVersionUID = 8012444410589325434L;
 
-	public PruneHashSet(int numberOfColumns) {
-		super(numberOfColumns);
-		ColumnCollection key = new ColumnCollection(numberOfColumns);
-		for (int columnIndex = 0; columnIndex < numberOfColumns; columnIndex++) {
-			this.put(key.setCopy(columnIndex), new HashSet<ColumnCollection>());
-		}
+	public PruneHashSet(Relation relation) {
+		super(relation.cardinality());
+		relation.stream()
+				.forEach(columnIndex -> this.put(new ColumnCollection(columnIndex), new HashSet<>()));
 	}
 
 	@Override
-	public void rebalance() {
+	public void clear() {
+		forEach((key, value) -> value.clear());
+	}
+
+	@Override
+	public void rebalance(Relation relation) {
 		boolean rebalancedGroup = false;
-		
+
 		do {
 			rebalancedGroup = false;
-			ArrayList<ColumnCollection> groupKeys = new ArrayList<>(this.keySet()); 
+			ArrayList<ColumnCollection> groupKeys = new ArrayList<>(this.keySet());
 			for (ColumnCollection key : groupKeys) {
 				if (this.get(key).size() > SPLIT_THRESHOLD) {
-					rebalanceGroup(key);
+					rebalanceGroup(key, relation);
 					rebalancedGroup = true;
 				}
 			}
@@ -35,13 +39,13 @@ public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollec
 	}
 
 	@Override
-	public void rebalanceGroup(ColumnCollection groupKey) {
+	public void rebalanceGroup(ColumnCollection groupKey, Relation relation) {
 		HashSet<ColumnCollection> depsOfGroup = this.get(groupKey);
-		for (int columnIndex : groupKey.complementCopy().getSetBits()) {
+		for (int columnIndex : groupKey.complementCopy(relation).getSetBits(relation)) {
 			ColumnCollection newKey = groupKey.setCopy(columnIndex);
 			HashSet<ColumnCollection> newGroup = new HashSet<ColumnCollection>();
 			this.put(newKey, newGroup);
-			
+
 			for (ColumnCollection depOfGroup : depsOfGroup) {
 				// when splitting a group it cannot contain the key itself
 				// because otherwise the group cannot contain any other 
@@ -56,6 +60,6 @@ public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollec
 			}
 		}
 		// remove the old group
-		this.remove(groupKey);		
+		this.remove(groupKey);
 	}
 }

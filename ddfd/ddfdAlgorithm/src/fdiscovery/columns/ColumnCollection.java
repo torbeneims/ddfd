@@ -2,6 +2,8 @@ package fdiscovery.columns;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 
@@ -39,12 +41,49 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		return (int) Math.ceil(Math.log10(numberOfColumns));
 	}
 
+	/**
+	 * Returns the bits inside this collection, aligning to the relation view.
+	 */
+	public int[] getSetBits(Relation relation) {
+		return this.stream().filter(relation::get).toArray();
+	}
+
+	/**
+	 * Returns all set bits. Only use this method if the column collection already aligns to the relation view i.e.
+	 * all statically set bits should be returned.
+	 * Statically set bits are set bits that are not part of the relation.
+	 */
+	@Deprecated
 	public int[] getSetBits() {
 		return this.stream().toArray();
 	}
 
+	/**
+	 * Returns all direct supersets according to the relation view. If in doubt, pass a full relation.
+	 */
+	public Collection<ColumnCollection> directSupersets(Relation relation) {
+		return this.complementCopy(relation).stream()
+				.filter(relation::get)
+				.mapToObj(this::setCopy)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Returns all direct subsets according to the relation view. If in doubt, pass a full relation.
+	 */
+	public Collection<ColumnCollection> directSubsets(Relation relation) {
+		return this.stream()
+				.filter(relation::get)
+				.mapToObj(this::clearCopy)
+				.collect(Collectors.toList());
+	}
+
 	public boolean isAtomic() {
 		return this.cardinality() == 1;
+	}
+
+	public int cardinality(Relation relation) {
+		return this.stream().filter(relation::get).toArray().length;
 	}
 	
 	public ColumnCollection addColumn(int columnIndex) {
@@ -67,18 +106,11 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		
 		return copy;
 	}
-	
-	public ColumnCollection clearAllCopy() {
+
+	public ColumnCollection clearAllCopy(Relation relation) {
 		ColumnCollection copy = (ColumnCollection)this.clone();
-		copy.clear();
-		
-		return copy;
-	}
-	
-	public ColumnCollection andNotCopy(ColumnCollection other) {
-		ColumnCollection copy = (ColumnCollection)this.clone();
-		copy.andNot(other);
-		
+		relation.stream().forEach(copy::clear);
+
 		return copy;
 	}
 	
@@ -109,16 +141,16 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		
 		return copy;
 	}
-	
-	public ColumnCollection complementCopy() {
+
+	public ColumnCollection complementCopy(Relation relation) {
 		ColumnCollection copy = (ColumnCollection)this.clone();
-		copy.flip(0, (int)this.getMostRightBit());
-		
+		relation.stream().forEach(copy::flip);
+
 		return copy;
 	}
-	
-	public ColumnCollection complement() {
-		this.flip(0, (int)this.getMostRightBit());
+
+	public ColumnCollection complement(Relation relation) {
+		relation.stream().forEach(this::flip);
 		return this;
 	}
 	
