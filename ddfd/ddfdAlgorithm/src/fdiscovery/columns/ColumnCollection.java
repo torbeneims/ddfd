@@ -37,8 +37,9 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		return columnCollection;
 	}
 
-	private static int getFormatStringWidth(int numberOfColumns) {
-		return (int) Math.ceil(Math.log10(numberOfColumns));
+	private static int getFormatStringWidth() {
+		return 2;
+//		return (int) Math.ceil(Math.log10(numberOfColumns));
 	}
 
 	/**
@@ -223,7 +224,7 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		StringBuilder outputBuilder = new StringBuilder();
 		if (this.cardinality() > 0) {
 			for (int columnIndex : this.getSetBits()) {
-				outputBuilder.append(String.format("%0" + getFormatStringWidth((int)this.getMostRightBit()) + "d,", Integer.valueOf(columnIndex)));
+				outputBuilder.append(String.format("%0" + getFormatStringWidth() + "d,", Integer.valueOf(columnIndex)));
 
 			}
 		} else {
