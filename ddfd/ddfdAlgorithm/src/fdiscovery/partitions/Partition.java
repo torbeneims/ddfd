@@ -1,5 +1,6 @@
 package fdiscovery.partitions;
 
+import java.util.Arrays;
 import java.util.TreeSet;
 
 import fdiscovery.columns.ColumnCollection;
@@ -10,7 +11,6 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 
 	private static final long serialVersionUID = 174046028525977844L;
 	
-	protected static int[] probeTable;
 	protected ColumnCollection indices;
 	protected int numberOfRows;
 	protected double error;
@@ -23,18 +23,12 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 		this.numberOfRows = numberOfRows;
 		this.error = -1;
 		this.distinctiveness = -1;
-		if (Partition.probeTable == null || Partition.probeTable.length != numberOfRows) {
-			Partition.probeTable = new int[numberOfRows+1];
-			for (int i = 0; i < Partition.probeTable.length; i++) {
-				Partition.probeTable[i] = -1;
-			}
-		}
 	}
-	
-	public void init(int numberOfRows) {
-		if (Partition.probeTable.length != numberOfRows) {
-			Partition.probeTable = new int[numberOfRows+1];
-		}
+
+	protected int[] getProbeTable() {
+		int[] probeTable = new int[numberOfRows +1];
+		Arrays.fill(probeTable, -1);
+		return probeTable;
 	}
 	
 	public Partition(Partition base, Partition additional) {
@@ -42,19 +36,10 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 		this.error = -1;
 		this.numberOfRows = base.numberOfRows;
 		this.distinctiveness = -1;
-		if (Partition.probeTable == null) {
-			Partition.probeTable = new int[numberOfRows+1];
-			for (int i = 0; i < Partition.probeTable.length; i++) {
-				Partition.probeTable[i] = -1;
-			}
-		}
-		
 	}
-	
-	private void resetProbeTable() {
-		for (int i = 0; i < Partition.probeTable.length; i++) {
-			Partition.probeTable[i] = -1;
-		}
+
+	private void resetProbeTable(int[] probeTable) {
+		Arrays.fill(probeTable, -1);
 	}
 	
 	@Override
@@ -109,11 +94,12 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 	}
 	
 	public boolean equals(Partition other) {
+		int[] probeTable = getProbeTable();
 		int numberOfValues = 0;
 		int groupIndex = 0;
 		for (TEquivalence equivalenceGroup : this) {
 			for (TIntIterator equivalenceGroupIt = equivalenceGroup.iterator(); equivalenceGroupIt.hasNext(); ) {
-				Partition.probeTable[equivalenceGroupIt.next()] = groupIndex;
+				probeTable[equivalenceGroupIt.next()] = groupIndex;
 				numberOfValues++;
 			}
 			groupIndex++;
@@ -121,17 +107,17 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 		for (TEquivalence equivalenceGroup : other) {
 			groupIndex = -2;
 			for (TIntIterator equivalenceGroupIt = equivalenceGroup.iterator(); equivalenceGroupIt.hasNext(); ) {
-				int currentGroupIndex = Partition.probeTable[equivalenceGroupIt.next()];
+				int currentGroupIndex = probeTable[equivalenceGroupIt.next()];
 				if (groupIndex == -2 || currentGroupIndex == groupIndex) {
 					groupIndex = currentGroupIndex;
 				} else {
-					resetProbeTable();
+					resetProbeTable(probeTable);
 					return false;
 				}
 				numberOfValues--;
 			}
 		}
-		resetProbeTable();
+		resetProbeTable(probeTable);
 		if (numberOfValues == 0) {
 			return true;
 		}

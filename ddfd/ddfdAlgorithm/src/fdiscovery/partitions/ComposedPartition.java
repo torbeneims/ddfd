@@ -58,7 +58,7 @@ public class ComposedPartition extends Partition {
 		
 		TIntObjectHashMap<TEquivalence> mapping = new TIntObjectHashMap<>();
 		
-		int[] probeTable = Partition.probeTable;
+		int[] probeTable = getProbeTable();
 		int i = 1;
 		for (TEquivalence equivalenceGroup : base) {
 			for (TIntIterator valueIt = equivalenceGroup.iterator(); valueIt.hasNext(); ) {
