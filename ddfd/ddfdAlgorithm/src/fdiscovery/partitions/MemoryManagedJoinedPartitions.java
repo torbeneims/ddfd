@@ -147,7 +147,7 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<Map<Column
 	
 	public Partition getAtomicPartition(int columnIndex) {
 		// TODO check relation handling
-		Partition result = this.get(1).get(new ColumnCollection(columnIndex));
+		Partition result = this.get(1).get(ColumnCollection.fromIndices(columnIndex));
 		assert result != null;
 		return result;
 	}

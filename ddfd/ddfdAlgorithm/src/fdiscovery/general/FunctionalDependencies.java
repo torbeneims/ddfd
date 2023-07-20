@@ -88,7 +88,7 @@ public class FunctionalDependencies extends THashMap<ColumnCollection, ColumnCol
 	public void addRHSColumn(ColumnCollection lhs, int rhsIndex) {
 		ColumnCollection rhs = null;
 		if (!this.containsKey(lhs)) {
-			rhs = new ColumnCollection(lhs.getNumberOfColumns());
+			rhs = new ColumnCollection();
 			this.put(lhs, rhs);
 		} else {
 			rhs = this.get(lhs);
