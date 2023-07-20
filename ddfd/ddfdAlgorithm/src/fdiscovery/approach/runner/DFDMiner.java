@@ -67,8 +67,12 @@ public class DFDMiner extends Miner implements Runnable {
 			dfdRunner.run();
 			System.out.println(String.format("Number of dependencies:\t%d", Integer.valueOf(dfdRunner.minimalDependencies.getCount())));
 			long timeFindFDs = System.currentTimeMillis();
-			System.out.println("Total time:\t" + (timeFindFDs - timeStart) / 1000.0 + "s");
 			System.out.println(dfdRunner.getDependencies());
+			int hash = dfdRunner.getDependencies().hashCode();
+			if(hash != -1122082685) {
+				throw new RuntimeException("Invalid result, hash is: " + hash);
+			}
+			System.out.println("Total time:\t" + (timeFindFDs - timeStart) / 1000.0 + "s");
 
 		} catch (FileNotFoundException e) {
 			System.out.println("The input file could not be found.");
