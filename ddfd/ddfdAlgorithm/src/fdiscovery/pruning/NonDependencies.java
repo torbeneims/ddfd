@@ -50,20 +50,7 @@ public class NonDependencies extends PruneHashSet {
 		}
 		return false;
 	}
-	
-	public boolean findProperSupersetOf(ColumnCollection value) {
-		for (ColumnCollection keyForGroup : this.keySet()) {
-			if (keyForGroup.isSubsetOf(value)) {
-				for (ColumnCollection valueInGroup : this.get(keyForGroup)) {
-					if (valueInGroup.isProperSupersetOf(value)) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-	
+
 	public void add(ColumnCollection newEntry) {
 		outer: for (ColumnCollection key : this.keySet()) {
 			if (key.isSubsetOf(newEntry)) {
@@ -82,23 +69,4 @@ public class NonDependencies extends PruneHashSet {
 		}
 		this.rebalance();
 	}
-
-	public ColumnCollection getNotRepresentedSuperset(THashSet<ColumnCollection> uncheckedSupersets) {
-		for (ColumnCollection uncheckedSuperset : uncheckedSupersets) {
-			if (!this.findSupersetOf(uncheckedSuperset)) {
-				return uncheckedSuperset;
-			}
-		}
-		return null;
-	}
-	
-	public ColumnCollection getNotRepresentedSuperset(THashSet<ColumnCollection> uncheckedSupersets, Dependencies dependencies) {
-		for (ColumnCollection uncheckedSuperset : uncheckedSupersets) {
-			if (!this.findSupersetOf(uncheckedSuperset) && !dependencies.isRepresented(uncheckedSuperset)) {
-				return uncheckedSuperset;
-			}
-		}
-		return null;
-	}
-	
 }

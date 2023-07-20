@@ -36,7 +36,6 @@ import gnu.trove.set.hash.THashSet;
 public class DFDMiner extends Miner implements Runnable {
 
 	private int numberOfColumns;
-	private int numberOfRows;
 	private ColumnOrder columnOrder;
 	private Stack<Seed> trace;
 	private Stack<Seed> seeds;
@@ -81,79 +80,9 @@ public class DFDMiner extends Miner implements Runnable {
 		}
 	}
 
-	public static void main2(String[] args) {
-		CLIParserMiner parser = new CLIParserMiner();
-		CommandLine cli = parser.parse(args);
-		String inputFilename = new String();
-		String columnFileDirectory = new String();
-		String resultFile = new String();
-		int numberOfColumns = 0;
-		int numberOfRows = 0;
-
-		if (cli.hasOption("file")) {
-			inputFilename = cli.getOptionValue("file");
-		}
-		if (cli.hasOption("input")) {
-			columnFileDirectory = cli.getOptionValue("input");
-		}
-		if (cli.hasOption("result")) {
-			resultFile = cli.getOptionValue("result");
-		}
-		if (cli.hasOption("columns")) {
-			numberOfColumns = Integer.valueOf(cli.getOptionValue("columns")).intValue();
-		}
-		if (cli.hasOption("rows")) {
-			numberOfRows = Integer.valueOf(cli.getOptionValue("rows")).intValue();
-		}
-		ColumnFiles columnFiles = new ColumnFiles(new File(columnFileDirectory), numberOfColumns, numberOfRows);
-		long timeStart = System.currentTimeMillis();
-		DFDMiner runner = new DFDMiner(columnFiles, numberOfRows);
-		try {
-			runner.run();
-			long timeEnd = System.currentTimeMillis();
-			runner.writeOutputSuccessful(resultFile, timeEnd - timeStart, inputFilename);
-		} catch (OutOfMemoryError e) {
-			System.exit(Miner.STATUS_OOM);
-		}
-		System.exit(0);
-	}
-
-	private void writeOutputSuccessful(String outputFile, long time, String inputFileName) {
-
-		String timeString = (time != -1) ? String.format("%.1f", Double.valueOf((double) (time) / 1000)) : "-1";
-		StringBuilder outputBuilder = new StringBuilder();
-		if (!inputFileName.isEmpty()) {
-			outputBuilder.append(String.format("%s\t", inputFileName));
-		}
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.numberOfRows)));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.numberOfColumns)));
-		outputBuilder.append(String.format("%s\t", timeString));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCount())));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCountForSizeLesserThan(2))));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCountForSizeLesserThan(3))));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCountForSizeLesserThan(4))));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCountForSizeLesserThan(5))));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCountForSizeLesserThan(6))));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.minimalDependencies.getCountForSizeGreaterThan(5))));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.joinedPartitions.getCount())));
-		outputBuilder.append(String.format("%d\t", Integer.valueOf(this.joinedPartitions.getTotalCount())));
-		outputBuilder.append(String.format("%d\n", Long.valueOf(Runtime.getRuntime().totalMemory())));
-		outputBuilder.append(String.format("#Memory: %s\n", Miner.humanReadableByteCount(Runtime.getRuntime().totalMemory(), false)));
-
-		try {
-			BufferedWriter resultFileWriter = new BufferedWriter(new FileWriter(new File(outputFile), true));
-			resultFileWriter.write(outputBuilder.toString());
-			System.out.print(outputBuilder.toString());
-			resultFileWriter.close();
-		} catch (IOException e) {
-			System.out.println("Couldn't write output.");
-		}
-	}
-
 	public DFDMiner(SVFileProcessor table) throws OutOfMemoryError {
 		this.observations = new Observations();
 		this.numberOfColumns = table.getNumberOfColumns();
-		this.numberOfRows = table.getNumberOfRows();
 		this.trace = new Stack<>();
 		this.seeds = new Stack<>();
 		this.minimalDependencies = new FunctionalDependencies();
@@ -162,27 +91,6 @@ public class DFDMiner extends Miner implements Runnable {
 		this.nonDependencies = new NonDependencies(this.numberOfColumns);
 		this.joinedPartitions = new MemoryManagedJoinedPartitions(this.numberOfColumns);
 		this.fileBasedPartitions = new FileBasedPartitions(table);
-		this.columnOrder = new ColumnOrder(fileBasedPartitions);
-		for (int columnIndex = 0; columnIndex < this.numberOfColumns; columnIndex++) {
-			ColumnCollection columnIdentifier = new ColumnCollection(this.numberOfColumns);
-			columnIdentifier.set(columnIndex);
-			this.joinedPartitions.addPartition(this.fileBasedPartitions.get(columnIndex));
-		}
-	}
-
-	public DFDMiner(ColumnFiles columnFiles, int numberOfRows) throws OutOfMemoryError {
-		this.observations = new Observations();
-		this.numberOfColumns = columnFiles.getNumberOfColumns();
-		this.numberOfRows = numberOfRows;
-		this.trace = new Stack<>();
-		this.seeds = new Stack<>();
-		this.minimalDependencies = new FunctionalDependencies();
-		this.maximalNonDependencies = new FunctionalDependencies();
-		this.dependencies = new Dependencies(this.numberOfColumns);
-		this.nonDependencies = new NonDependencies(this.numberOfColumns);
-		this.joinedPartitions = new MemoryManagedJoinedPartitions(this.numberOfColumns);
-		this.fileBasedPartitions = new FileBasedPartitions(columnFiles, numberOfRows);
-		columnFiles.clear();
 		this.columnOrder = new ColumnOrder(fileBasedPartitions);
 		for (int columnIndex = 0; columnIndex < this.numberOfColumns; columnIndex++) {
 			ColumnCollection columnIdentifier = new ColumnCollection(this.numberOfColumns);
@@ -373,36 +281,6 @@ public class DFDMiner extends Miner implements Runnable {
 		ArrayList<ColumnCollection> currentMaximalNonDependencies = maximalNonDependencies.getLHSForRHS(currentRHSIndex);
 		HashSet<ColumnCollection> currentMinimalDependencies = new HashSet<>(minimalDependencies.getLHSForRHS(currentRHSIndex));
 		ArrayList<ColumnCollection> newDeps = new ArrayList<>(numberOfColumns * deps.size());
-//		Holes holes = new Holes();
-		
-//		int i = 0;
-//		for (ColumnCollection maximalNonDependency : currentMaximalNonDependencies) {
-//			ColumnCollection complement = maximalNonDependency.setCopy(currentRHSIndex).complement();
-//			if (deps.isEmpty()) {
-//				ColumnCollection emptyColumnIndices = new ColumnCollection(numberOfColumns);
-//				for (Integer complementColumnIndex : complement.getSetBits()) {
-//					deps.add(emptyColumnIndices.setCopy(complementColumnIndex));
-//				}
-//			} else {
-//				for (ColumnCollection dep : deps) {
-//					int[] setBits = complement.getSetBits();
-//					for (int setBit = 0; setBit < setBits.length; setBit++) {
-//						holes.add(dep.setCopy(setBits[setBit]));
-////						System.out.println("Dep:\t" + dep.setCopy(setBits[setBit]));
-//					}
-//				}
-//				// minimize newDeps
-//				System.out.println(i++ + "\t" + currentMaximalNonDependencies.size());
-//				System.out.println("total deps:\t" + deps.size());
-//				System.out.println("before minimizing:\t" + holes.size());
-////				ArrayList<ColumnCollection> minimizedNewDeps = minimizeSeeds(newDeps);
-//				holes.minimize();
-//				System.out.println("after minimizing:\t" + holes.size());
-//				deps.clear();
-//				deps.addAll(holes);
-//				holes.clear();
-//			}
-//		}
 
 		for (ColumnCollection maximalNonDependency : currentMaximalNonDependencies) {
 			ColumnCollection complement = maximalNonDependency.setCopy(currentRHSIndex).complement();

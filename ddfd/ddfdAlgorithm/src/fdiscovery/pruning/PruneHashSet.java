@@ -17,16 +17,7 @@ public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollec
 			this.put(key.setCopy(columnIndex), new HashSet<ColumnCollection>());
 		}
 	}
-	
-	public static ColumnCollection getNotPrunedKey(Dependencies dependencies, NonDependencies nonDependencies, ArrayList<ColumnCollection> candidates) {
-		for (ColumnCollection candidate : candidates) {
-			if (!dependencies.isRepresented(candidate) && !nonDependencies.isRepresented(candidate)) {
-				return candidate;
-			}
-		}
-		return null;
-	}
-	
+
 	@Override
 	public void rebalance() {
 		boolean rebalancedGroup = false;

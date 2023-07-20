@@ -8,8 +8,7 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 
 	private int formatStringWidth;
 	protected int numberOfColumns;
-	protected int[] setBits;
-	
+
 	public ColumnCollection(int numberOfColumns ) {
 		this.numberOfColumns = numberOfColumns;
 		this.formatStringWidth = (int)Math.ceil(Math.log10(this.numberOfColumns));
@@ -150,10 +149,6 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		return union.cardinality();
 	}
 
-	public boolean isSubsetOrSupersetOf(ColumnCollection other) {
-		return isSubsetOf(other) || isSupersetOf(other);
-	}
-	
 	public int getNumberOfColumns() {
 		return this.numberOfColumns;
 	}

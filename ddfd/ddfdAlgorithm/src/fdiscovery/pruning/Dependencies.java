@@ -37,35 +37,7 @@ public class Dependencies extends PruneHashSet {
 		}
 		return false;
 	}
-	
-	public boolean findSubsetOf(ColumnCollection value) {
-		for (ColumnCollection keyForGroup : this.keySet()) {
-			if (keyForGroup.isSubsetOf(value)) {
-				for (ColumnCollection valueInGroup : this.get(keyForGroup)) {
-					if (valueInGroup.isSubsetOf(value)) {
-						return true;
-					}
-				}
-			}
-		}
-		
-		return false;
-	}
-	
-	public boolean findProperSubsetOf(ColumnCollection value) {
-		for (ColumnCollection keyForGroup : this.keySet()) {
-			if (keyForGroup.isSubsetOf(value)) {
-				for (ColumnCollection valueInGroup : this.get(keyForGroup)) {
-					if (valueInGroup.isProperSubsetOf(value)) {
-						return true;
-					}
-				}
-			}
-		}
-		
-		return false;
-	}
-	
+
 	public void add(ColumnCollection newEntry) {
 		outer: for (ColumnCollection key : this.keySet()) {
 			if (key.isSubsetOf(newEntry)) {
@@ -84,14 +56,4 @@ public class Dependencies extends PruneHashSet {
 		}
 		this.rebalance();
 	}
-
-	public ColumnCollection getNotRepresentedSubset(THashSet<ColumnCollection> uncheckedSubsets) {
-		for (ColumnCollection uncheckedSubset : uncheckedSubsets) {
-			if (!this.findSubsetOf(uncheckedSubset)) {
-				return uncheckedSubset;
-			}
-		}
-		return null;
-	}
-
 }

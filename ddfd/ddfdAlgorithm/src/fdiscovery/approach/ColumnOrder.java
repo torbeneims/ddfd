@@ -3,8 +3,6 @@ package fdiscovery.approach;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import fdiscovery.approach.equivalence.EquivalenceManagedFileBasedPartition;
-import fdiscovery.approach.equivalence.EquivalenceManagedFileBasedPartitions;
 import fdiscovery.columns.ColumnCollection;
 import fdiscovery.partitions.FileBasedPartition;
 import fdiscovery.partitions.FileBasedPartitions;
@@ -26,17 +24,6 @@ public class ColumnOrder {
 		}
 	}
 
-	public ColumnOrder(EquivalenceManagedFileBasedPartitions fileBasedPartitions) {
-		this.order = new int[fileBasedPartitions.size()];
-		ArrayList<EquivalenceManagedFileBasedPartition> partitions = new ArrayList<>();
-		partitions.addAll(fileBasedPartitions);
-		Collections.sort(partitions);
-		int orderIndex = 0;
-		for (EquivalenceManagedFileBasedPartition partition : partitions) {
-			order[orderIndex++] = partition.getIndex();
-		}
-	}
-	
 	public int[] getOrderHighDistinctCount(ColumnCollection columns) {
 		int[] columnIndices = columns.getSetBits();
 		int[] orderForColumns = new int[columnIndices.length];
