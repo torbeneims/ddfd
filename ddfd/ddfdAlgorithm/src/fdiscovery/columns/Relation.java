@@ -21,4 +21,8 @@ public class Relation extends ColumnCollection {
 
         return copy;
     }
+
+    public Relation copy() {
+        return (Relation)this.clone();
+    }
 }

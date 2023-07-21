@@ -9,50 +9,74 @@ import fdiscovery.pruning.Seed;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.THashSet;
 
+import java.awt.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class GraphTraverser {
-    private final Relation relation;
+public class GraphTraverser implements Runnable {
 
-    private final MemoryManagedJoinedPartitions partitions;
-
+    /* Always shared data */
+    private final FileBasedPartitions fileBasedPartitions;
     private final ColumnOrder columnOrder;
+    private final Collection<ColumnCollection> keys;
 
-    private final FunctionalDependencies minimalDependencies;
-    private final FunctionalDependencies maximalNonDependencies;
-    private final Observations observations;
-    private final Dependencies dependencies;
-    private final NonDependencies nonDependencies;
+    /* Optionally shared data */
+    private MemoryManagedJoinedPartitions partitions;
+    private FunctionalDependencies minimalDependencies;
+    private FunctionalDependencies maximalNonDependencies;
 
-    Collection<ColumnCollection> keys;
-
+    // ========== RHS LOCAL ==========
     private int rhsIndex = -1;
+    private Observations observations;
+    private Dependencies dependencies;
+    private NonDependencies nonDependencies;
 
+    // ========== SPACE-PARTITIONING LOCAL ==========
+    private ColumnCollection base;
+    private Relation relation;
     private Stack<Seed> seeds;
 
-
+    /* Other data */
     private static final AtomicLong totalTime = new AtomicLong(0);
 
-    public GraphTraverser(MemoryManagedJoinedPartitions partitions,
-                          ColumnOrder columnOrder, Relation relation,
-                          ArrayList<ColumnCollection> keys) {
-        this.partitions = partitions;
-        this.columnOrder = columnOrder;
-        this.relation = relation;
+    /* Settings */
+    /** Whether to share partitions over RHSs */
+    public static boolean SHARE_PARTITIONS = false;
+    /** Whether to use concurrent partitions even if they are not shared */
+    public static boolean FORCE_CONCURRENT_PARTITIONS = false;
+    /** Whether to share minimalDependencies and maximalNonDependencies over RHSs <br/>
+     *  Careful: Make sure all traversers have finished before accessing minimalDependencies or maximalNonDependencies */
+    public static boolean SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES = false;
+    /** Whether to share observations between space-partitioning runs */
+    public static boolean SHARE_OBSERVATIONS = false;
+    /** Whether to share dependencies and nonDependencies (for pruning) between space-partitioning runs */
+    public static boolean SHARE_FUNCTIONAL_DEPENDENCIES = false;
+    /** Whether to share the relation between different bases (disable when dynamically changing space partitioning  */
+    public static boolean SHARE_RELATION = false;
+
+
+    public GraphTraverser(FileBasedPartitions fileBasedPartitions, Collection<ColumnCollection> keys, Relation relation) {
+        this.fileBasedPartitions = fileBasedPartitions;
+        this.columnOrder = new ColumnOrder(fileBasedPartitions);
+        this.keys = keys;
+
+        this.partitions = createJoinedPartitions();
         this.minimalDependencies = new FunctionalDependencies();
         keys.forEach(uniquePartition -> minimalDependencies.put(uniquePartition, uniquePartition.complementCopy(relation)));
         this.maximalNonDependencies = new FunctionalDependencies();
 
-        this.observations = new Observations();
-
-        dependencies = new Dependencies(relation);
-        nonDependencies = new NonDependencies(relation);
-
-        seeds = new Stack<>();
+        this.relation = relation;
     }
 
+    private GraphTraverser(FileBasedPartitions fileBasedPartitions, ColumnOrder columnOrder, Collection<ColumnCollection> keys) {
+        this.fileBasedPartitions = fileBasedPartitions;
+        this.columnOrder = columnOrder;
+        this.keys = keys;
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    @Deprecated
     public GraphTraverser setRhsIndex(int rhsIndex) {
         this.rhsIndex = rhsIndex;
 
@@ -65,13 +89,92 @@ public class GraphTraverser {
         return this;
     }
 
+    /**
+     * Create a new Traverser with all data shared
+     */
+    public GraphTraverser copy() {
+        GraphTraverser copy = new GraphTraverser(fileBasedPartitions, columnOrder, keys);
+
+        copy.partitions = partitions;
+        copy.minimalDependencies = minimalDependencies;
+        copy.maximalNonDependencies = maximalNonDependencies;
+
+        copy.rhsIndex = rhsIndex;
+        copy.observations = observations;
+        copy.dependencies = dependencies;
+        copy.nonDependencies = nonDependencies;
+
+        copy.relation = relation;
+        copy.base = base;
+
+        copy.seeds = seeds;
+
+        return copy;
+    }
+
+    public GraphTraverser setRHS(int newRhsIndex) {
+        /* Optionally shared data */
+        if(!SHARE_PARTITIONS) {
+            partitions = createJoinedPartitions();
+        }
+        if(!SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
+            this.minimalDependencies = new FunctionalDependencies();
+            keys.forEach(uniquePartition ->
+                    this.minimalDependencies.put(uniquePartition, uniquePartition.complementCopy(relation)));
+            this.maximalNonDependencies = new FunctionalDependencies();
+        }
+
+        /* Necessary resets */
+        this.rhsIndex = newRhsIndex;
+        this.dependencies = new Dependencies(relation);
+        this.nonDependencies = new NonDependencies(relation);
+        this.observations = new Observations();
+        this.addObservationsFromKeys(newRhsIndex);
+
+        return this;
+    }
+
+    public GraphTraverser setBase(ColumnCollection base) {
+        /* Optionally shared data */
+        if(!SHARE_OBSERVATIONS) {
+            this.observations = new Observations();
+            this.addObservationsFromKeys(rhsIndex);
+        }
+        if(!SHARE_FUNCTIONAL_DEPENDENCIES) {
+            this.dependencies = new Dependencies(relation);
+            this.nonDependencies = new NonDependencies(relation);
+        }
+
+        /* Necessary resets */
+        this.base = base;
+        this.seeds = new Stack<>();
+        generateInitialSeeds(base);
+
+        /* Copy relation if it can dynamically change */
+        if(!SHARE_RELATION) {
+            this.relation = relation.copy();
+        }
+        return this;
+    }
+
+    private MemoryManagedJoinedPartitions createJoinedPartitions() {
+        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS ?
+                new ConcurrentMemoryManagedJoinedPartitions(fileBasedPartitions) :
+                new MemoryManagedJoinedPartitions(fileBasedPartitions);
+    }
+
+    @Deprecated
     public int traverseGraph(ColumnCollection base) {
+        this.base = base;
+        run();
+        return minimalDependencies.getCount();
+    }
+
+    @Override
+    public void run() {
         assert relation.get(rhsIndex) || !base.get(rhsIndex) : "RHS must be in relation";
 
         System.out.printf("Traversing RHS %d on thread %d\n", rhsIndex, Thread.currentThread().getId());
-
-
-        generateInitialSeeds(base);
 
         Deque<Seed> trace = new LinkedList<>();
 
@@ -126,7 +229,6 @@ public class GraphTraverser {
         System.out.printf("Finding %d deps (including RHS -> ?) on RHS %d (Thread %d) took %dms, total %dms\n",
                 minimalDependencies.getCount(), rhsIndex, Thread.currentThread().getId(), timeDiff, totalTime.get());
 
-        return minimalDependencies.getCount();
     }
 
     private void generateInitialSeeds(ColumnCollection base) {

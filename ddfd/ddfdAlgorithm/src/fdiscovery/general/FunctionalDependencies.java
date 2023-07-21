@@ -9,7 +9,7 @@ import java.util.Set;
 import fdiscovery.columns.ColumnCollection;
 import gnu.trove.map.hash.THashMap;
 
-public class FunctionalDependencies extends THashMap<ColumnCollection, ColumnCollection> {
+public class FunctionalDependencies extends THashMap<ColumnCollection /* LHS */, ColumnCollection /* RHSs */> {
 
 	private static final long serialVersionUID = -6781621109409590322L;
 

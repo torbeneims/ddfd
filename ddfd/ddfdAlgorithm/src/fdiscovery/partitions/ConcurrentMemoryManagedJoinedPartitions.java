@@ -11,6 +11,10 @@ public class ConcurrentMemoryManagedJoinedPartitions extends MemoryManagedJoined
         super(numberOfColumns);
     }
 
+    public ConcurrentMemoryManagedJoinedPartitions(FileBasedPartitions fileBasedPartitions) {
+        super(fileBasedPartitions);
+    }
+
     @Override
     protected Map<ColumnCollection, Partition> createPartitionMap() {
         return new ConcurrentHashMap<ColumnCollection, Partition>();
