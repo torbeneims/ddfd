@@ -12,7 +12,7 @@ import fdiscovery.partitions.FileBasedPartitions;
 // sorts partitions from lowest to highest distinct count
 public class ColumnOrder {
 
-	private int[] order;
+	private final int[] order;
 	
 	public ColumnOrder(FileBasedPartitions fileBasedPartitions) {
 		this.order = new int[fileBasedPartitions.size()];
