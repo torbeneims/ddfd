@@ -119,12 +119,6 @@ public class GraphTraverser implements Runnable {
         if(!SHARE_PARTITIONS) {
             partitions = createJoinedPartitions();
         }
-        if(!SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
-            this.minimalDependencies = new FunctionalDependencies();
-            keys.forEach(uniquePartition ->
-                    this.minimalDependencies.put(uniquePartition, uniquePartition.complementCopy(relation)));
-            this.maximalNonDependencies = new FunctionalDependencies();
-        }
 
         /* Necessary resets */
         this.rhsIndex = newRhsIndex;
@@ -145,6 +139,13 @@ public class GraphTraverser implements Runnable {
         if(!SHARE_FUNCTIONAL_DEPENDENCIES) {
             this.dependencies = new Dependencies(relation);
             this.nonDependencies = new NonDependencies(relation);
+        }
+        if(!SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
+            /* Must not be shared over bases because of hole finding */
+            this.minimalDependencies = new FunctionalDependencies();
+            keys.forEach(uniquePartition ->
+                    this.minimalDependencies.put(uniquePartition, uniquePartition.complementCopy(relation)));
+            this.maximalNonDependencies = new FunctionalDependencies();
         }
 
         /* Necessary resets */
