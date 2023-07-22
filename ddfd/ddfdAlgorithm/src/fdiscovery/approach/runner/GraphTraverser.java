@@ -168,7 +168,7 @@ public class GraphTraverser implements Callable<GraphTraverser> {
     }
 
     @Override
-    public void run() {
+    public GraphTraverser call() {
         assert relation.get(rhsIndex) || !base.get(rhsIndex) : "RHS must be in relation";
 
         System.out.printf("Traversing RHS %d on thread %d\n", rhsIndex, Thread.currentThread().getId());
