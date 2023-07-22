@@ -1,10 +1,7 @@
 package fdiscovery.approach.runner;
 
-import java.awt.*;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -13,33 +10,18 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import fdiscovery.columns.Relation;
-import org.apache.commons.cli.CommandLine;
 
 
-import fdiscovery.approach.ColumnOrder;
 import fdiscovery.columns.ColumnCollection;
-import fdiscovery.general.CLIParserMiner;
-import fdiscovery.general.ColumnFiles;
 import fdiscovery.general.FunctionalDependencies;
 import fdiscovery.general.Miner;
-import fdiscovery.partitions.ComposedPartition;
 import fdiscovery.partitions.FileBasedPartition;
 import fdiscovery.partitions.FileBasedPartitions;
-import fdiscovery.partitions.MemoryManagedJoinedPartitions;
-import fdiscovery.partitions.Partition;
 import fdiscovery.preprocessing.SVFileProcessor;
-import fdiscovery.pruning.Dependencies;
-import fdiscovery.pruning.NonDependencies;
-import fdiscovery.pruning.Observation;
-import fdiscovery.pruning.Observations;
-import fdiscovery.pruning.Seed;
-import gnu.trove.map.hash.TLongObjectHashMap;
-import gnu.trove.set.hash.THashSet;
 
-public class DFDMiner extends Miner implements Runnable {
+public class DDFDMiner extends Miner implements Runnable {
 
     private final int numberOfColumns;
     private final FunctionalDependencies minimalDependencies;
@@ -65,7 +47,7 @@ public class DFDMiner extends Miner implements Runnable {
             System.out.println("Columns:\t" + inputFileProcessor.getNumberOfColumns());
             System.out.println("Rows:\t" + inputFileProcessor.getNumberOfRows());
             inputFileProcessor.createColumnFiles();
-            DFDMiner dfdRunner = new DFDMiner(inputFileProcessor);
+            DDFDMiner dfdRunner = new DDFDMiner(inputFileProcessor);
 
             dfdRunner.run();
 
