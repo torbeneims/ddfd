@@ -175,6 +175,8 @@ public class GraphTraverser implements Runnable {
 
         long startTime = System.currentTimeMillis();
 
+
+        Stack<Seed> prevSeeds = null;
         do {
             while (!seeds.isEmpty()) {
                 Seed currentSeed = randomTake();
@@ -217,6 +219,8 @@ public class GraphTraverser implements Runnable {
                 } while (currentSeed != null);
             }
             seeds = this.nextSeeds(rhsIndex, base);
+            assert prevSeeds == null || !new HashSet<>(seeds).containsAll(prevSeeds) : "Stuck at generating seeds";
+            prevSeeds = seeds;
         } while (!seeds.isEmpty());
 
         final long timeDiff = System.currentTimeMillis() - startTime;
