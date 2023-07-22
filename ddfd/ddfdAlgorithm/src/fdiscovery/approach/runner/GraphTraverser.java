@@ -219,8 +219,9 @@ public class GraphTraverser implements Runnable {
                 } while (currentSeed != null);
             }
             seeds = this.nextSeeds(rhsIndex, base);
-            assert prevSeeds == null || !new HashSet<>(seeds).containsAll(prevSeeds) : "Stuck at generating seeds";
-            prevSeeds = seeds;
+            assert prevSeeds == null || !new HashSet<>(seeds).containsAll(prevSeeds) : "Stuck at generating seeds: " + seeds.size() + " vs " + prevSeeds.size();
+            prevSeeds = new Stack<>();
+            prevSeeds.addAll(seeds);
         } while (!seeds.isEmpty());
 
         final long timeDiff = System.currentTimeMillis() - startTime;
