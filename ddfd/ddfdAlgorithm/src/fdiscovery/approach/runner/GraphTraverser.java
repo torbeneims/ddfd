@@ -11,10 +11,11 @@ import gnu.trove.set.hash.THashSet;
 
 import java.awt.*;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class GraphTraverser implements Runnable {
+public class GraphTraverser implements Callable<GraphTraverser> {
 
     /* Always shared data */
     private final FileBasedPartitions fileBasedPartitions;
@@ -182,6 +183,7 @@ public class GraphTraverser implements Runnable {
             while (!seeds.isEmpty()) {
                 Seed currentSeed = randomTake();
                 do {
+                    assert base.isSubsetOf(currentSeed.getIndices()) : "Seed must be a superset of the base";
                     ColumnCollection lhsIndices = currentSeed.getIndices();
                     Observation observationOfLHS = observations.get(lhsIndices);
                     if (observationOfLHS == null) {
@@ -230,6 +232,7 @@ public class GraphTraverser implements Runnable {
         System.out.printf("Finding %d deps (including RHS -> ?) on RHS %d (Thread %d) took %dms, total %dms\n",
                 minimalDependencies.getCount(), rhsIndex, Thread.currentThread().getId(), timeDiff, totalTime.get());
 
+        return this;
     }
 
     private void generateInitialSeeds(ColumnCollection base) {
@@ -379,11 +382,13 @@ public class GraphTraverser implements Runnable {
 
         assert remainingSeeds.isEmpty() || !notPrunedSeeds.isEmpty() : "Only found pruned seeds";
 
-        if(VERBOSE)
-            System.out.printf("Got next seeds: %s\ton %s\n",
-                    remainingSeeds,
+        if(VERBOSE) {
+            System.out.printf("Got next seeds[0]: %s\ton %s\n",
+                    remainingSeeds.isEmpty() ? "[]" : remainingSeeds.peek() + ": " + observations.get(remainingSeeds.peek().getIndices()) + "(" + remainingSeeds.size() + ")",
                     base);
-
+            if(!remainingSeeds.isEmpty() && observations.get(remainingSeeds.peek().getIndices()) == Observation.DEPENDENCY)
+                System.out.printf("directSubsets: %s\n", remainingSeeds.peek().getIndices().directSubsets(relation).stream().map(cc -> cc + ": " + observations.get(cc)).collect(Collectors.toList()));
+        }
 
         return remainingSeeds;
     }
