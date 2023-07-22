@@ -46,11 +46,16 @@ public class DFDMiner extends Miner implements Runnable {
     private final FileBasedPartitions fileBasedPartitions;
     public static int THREADS = 4;
     public static int PARTITION_FACTOR = 0;
+    public static String FILE = DDFDMiner.input;
+    public static int HASH = 0;
 
     public static void main(String[] args) {
+        parseCLIArgs(args);
+
         createColumDirectory();
 
-        File source = new File(DFDMiner.input);
+        File source = new File(FILE);
+        System.out.printf("Loading file %s\n", source.getAbsolutePath());
         try {
             long timeStart = System.currentTimeMillis();
 
@@ -80,7 +85,84 @@ public class DFDMiner extends Miner implements Runnable {
         }
     }
 
-    public DFDMiner(SVFileProcessor table) throws OutOfMemoryError {
+    public static void parseCLIArgs(String[] args) {
+        if (args == null || args.length == 0) {
+            return;
+        }
+
+        try {
+            for (int i = 0; i < args.length; i++) {
+                switch (args[i].toLowerCase()) {
+                    case "--sharepartitions":
+                    case "-p":
+                        GraphTraverser.SHARE_PARTITIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--forceconcurrentpartitions":
+                    case "-c":
+                        GraphTraverser.FORCE_CONCURRENT_PARTITIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--sharemfds":
+                    case "-m":
+                        GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--shareobservations":
+                    case "-o":
+                        GraphTraverser.SHARE_OBSERVATIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--sharefds":
+                    case "-d":
+                        GraphTraverser.SHARE_FUNCTIONAL_DEPENDENCIES = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--sharerelation":
+                    case "-r":
+                        GraphTraverser.SHARE_RELATION = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--verbose":
+                    case "-v":
+                        GraphTraverser.VERBOSE = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--threads":
+                    case "-t":
+                        THREADS = Integer.parseInt(args[++i]);
+                        break;
+                    case "--partitionfactor":
+                    case "-s":
+                        PARTITION_FACTOR = Integer.parseInt(args[++i]);
+                        break;
+                    case "--input":
+                    case "-i":
+                        FILE = args[++i];
+                        break;
+                    case "--hash":
+                    case "-h":
+                        HASH = Integer.parseInt(args[++i]);
+                        break;
+                    default:
+                        System.out.println("Ignored undefined argument: " + args[i]);
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error encountered while parsing the command-line arguments. Please check your inputs.");
+        }
+
+        printSettings();
+    }
+
+    public static void printSettings() {
+        System.out.println("SHARE_PARTITIONS: " + GraphTraverser.SHARE_PARTITIONS);
+        System.out.println("FORCE_CONCURRENT_PARTITIONS: " + GraphTraverser.FORCE_CONCURRENT_PARTITIONS);
+        System.out.println("SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES: " + GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES);
+        System.out.println("SHARE_OBSERVATIONS: " + GraphTraverser.SHARE_OBSERVATIONS);
+        System.out.println("SHARE_FUNCTIONAL_DEPENDENCIES: " + GraphTraverser.SHARE_FUNCTIONAL_DEPENDENCIES);
+        System.out.println("SHARE_RELATION: " + GraphTraverser.SHARE_RELATION);
+        System.out.println("THREADS: " + THREADS);
+        System.out.println("PARTITION_FACTOR: " + PARTITION_FACTOR);
+        System.out.println("input: " + FILE);
+        System.out.println("hash: " + HASH + (HASH == 0 ? " (ignored)" : " (checked)"));
+    }
+
+    public DDFDMiner(SVFileProcessor table) throws OutOfMemoryError {
         this.numberOfColumns = table.getNumberOfColumns();
         this.minimalDependencies = new FunctionalDependencies();
         this.fileBasedPartitions = new FileBasedPartitions(table);
@@ -153,9 +235,12 @@ public class DFDMiner extends Miner implements Runnable {
         System.out.printf("Found %d deps :)\n", minimalDependencies.getCount());
         System.out.printf("Found is %d :)\n", found.get());
 
-        if (minimalDependencies.hashCode() != -1122082685) {
+        if(HASH == 0)
+            return;
+
+        if (minimalDependencies.hashCode() != HASH) {
             System.out.printf("Deps: %s\n", minimalDependencies);
-            throw new RuntimeException("Hashcode is not correct");
+            throw new RuntimeException("Hashcode is not correct: " + minimalDependencies.hashCode() + " != " + HASH);
         }
         System.out.println("Hashcode is correct :)");
 

@@ -52,8 +52,10 @@ public class GraphTraverser implements Runnable {
     public static boolean SHARE_OBSERVATIONS = false;
     /** Whether to share dependencies and nonDependencies (for pruning) between space-partitioning runs */
     public static boolean SHARE_FUNCTIONAL_DEPENDENCIES = false;
-    /** Whether to share the relation between different bases (disable when dynamically changing space partitioning  */
+    /** Whether to share the relation between different bases (disable when dynamically changing space partitioning)  */
     public static boolean SHARE_RELATION = false;
+
+    public static boolean VERBOSE = false;
 
 
     public GraphTraverser(FileBasedPartitions fileBasedPartitions, Collection<ColumnCollection> keys, Relation relation) {
@@ -158,16 +160,9 @@ public class GraphTraverser implements Runnable {
     }
 
     private MemoryManagedJoinedPartitions createJoinedPartitions() {
-        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS ?
+        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS || DDFDMiner.PARTITION_FACTOR > 0 ?
                 new ConcurrentMemoryManagedJoinedPartitions(fileBasedPartitions) :
                 new MemoryManagedJoinedPartitions(fileBasedPartitions);
-    }
-
-    @Deprecated
-    public int traverseGraph(ColumnCollection base) {
-        this.base = base;
-        run();
-        return minimalDependencies.getCount();
     }
 
     @Override
@@ -378,12 +373,10 @@ public class GraphTraverser implements Runnable {
 
         assert remainingSeeds.isEmpty() || !notPrunedSeeds.isEmpty() : "Only found pruned seeds";
 
-        System.out.printf("Got next seeds: %s\n\tpruned deps: %s\n\tpruned nondeps: %s\n\tnot pruned: %s\n\ton %s\n",
-                remainingSeeds,
-                prunedSubsets,
-                prunedSupersets,
-                notPrunedSeeds,
-                base);
+        if(VERBOSE)
+            System.out.printf("Got next seeds: %s\ton %s\n",
+                    remainingSeeds,
+                    base);
 
 
         return remainingSeeds;
