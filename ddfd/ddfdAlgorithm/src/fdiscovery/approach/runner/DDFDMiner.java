@@ -5,11 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import fdiscovery.columns.Relation;
 
@@ -28,6 +26,7 @@ public class DDFDMiner extends Miner implements Runnable {
     private final FileBasedPartitions fileBasedPartitions;
     public static int THREADS = 4;
     public static int PARTITION_FACTOR = 0;
+    public static int TRAVERSERS_PER_RHS = 1;
     public static String FILE = DDFDMiner.input;
     public static int HASH = 0;
 
@@ -119,6 +118,10 @@ public class DDFDMiner extends Miner implements Runnable {
                     case "-h":
                         HASH = Integer.parseInt(args[++i]);
                         break;
+                    case "--traversersperrhs":
+                    case "-j":
+                        TRAVERSERS_PER_RHS = Integer.parseInt(args[++i]);
+                        break;
                     default:
                         System.out.println("Ignored undefined argument: " + args[i]);
                         break;
@@ -140,6 +143,7 @@ public class DDFDMiner extends Miner implements Runnable {
         System.out.println("SHARE_RELATION: " + GraphTraverser.SHARE_RELATION);
         System.out.println("THREADS: " + THREADS);
         System.out.println("PARTITION_FACTOR: " + PARTITION_FACTOR);
+        System.out.println("TRAVERSERS_PER_RHS: " + TRAVERSERS_PER_RHS);
         System.out.println("input: " + FILE);
         System.out.println("hash: " + HASH + (HASH == 0 ? " (ignored)" : " (checked)"));
     }
@@ -159,7 +163,16 @@ public class DDFDMiner extends Miner implements Runnable {
 
         List<Future<GraphTraverser>> futures = new ArrayList<>();
 
-        submitTasks(keys, executorService, futures);
+        getTraversers(keys).forEach(traverser -> {
+            assert TRAVERSERS_PER_RHS > 0 : "Traversers needed";
+            for (int i = 0; i < TRAVERSERS_PER_RHS; i++) {
+                Future<GraphTraverser> future = executorService.submit(traverser);
+
+                // Future traversers hold redundant information
+                if(i == 0)
+                    futures.add(future);
+            }
+        });
 
         retrieveResults(futures);
 
@@ -168,14 +181,14 @@ public class DDFDMiner extends Miner implements Runnable {
         System.out.printf("Found %d deps :)\n", minimalDependencies.getCount());
 
         checkHash();
-
     }
 
     /**
      * Submit tasks for each RHS traversal and store the Future object
      */
-    private void submitTasks(ArrayList<ColumnCollection> keys, ExecutorService executorService, List<Future<GraphTraverser>> futures) {
+    private Collection<GraphTraverser> getTraversers(ArrayList<ColumnCollection> keys) {
         Relation relation = setupRelation();
+        Collection<GraphTraverser> traversers = new ArrayList<>();
 
         final int nonFixatedBits = numberOfColumns - PARTITION_FACTOR;
         GraphTraverser traverser = new GraphTraverser(fileBasedPartitions, keys, relation);
@@ -191,8 +204,41 @@ public class DDFDMiner extends Miner implements Runnable {
                     continue;
 
                 System.out.printf("Starting with RHS %d and fixed base %s\n", rhsIndex, base);
-                futures.add(executorService.submit(traverser));
+                traversers.add(traverser);
             }
+        }
+
+        return traversers;
+    }
+
+    public static class PrioritizedTask implements Runnable, Comparable<PrioritizedTask> {
+        private final Runnable task;
+        private final int priority;
+
+        public PrioritizedTask(Runnable task, int priority) {
+            this.task = task;
+            this.priority = priority;
+        }
+
+        public <T> PrioritizedTask(Callable<T> task, int priority, Consumer<T> then) {
+            this.task = () -> {
+                try {
+                    then.accept(task.call());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            };
+            this.priority = priority;
+        }
+
+        @Override
+        public void run() {
+            task.run();
+        }
+
+        @Override
+        public int compareTo(PrioritizedTask other) {
+            return Integer.compare(other.priority, this.priority);
         }
     }
 
