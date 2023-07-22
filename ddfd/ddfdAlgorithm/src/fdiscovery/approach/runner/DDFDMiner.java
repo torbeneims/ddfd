@@ -154,69 +154,59 @@ public class DDFDMiner extends Miner implements Runnable {
 
         ArrayList<ColumnCollection> keys = findUniqueColumnCombinations();
 
-        Relation relation = new Relation(numberOfColumns);
-
-        for (int i = 0; i < PARTITION_FACTOR; i++) {
-            relation.clear(numberOfColumns - 1 - i);
-        }
-        System.out.printf("Partition factor is %d, relation is %s\n", PARTITION_FACTOR, relation);
-
         // Create an ExecutorService with a thread pool size equal to the number of RHS
         ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
+
         List<Future<GraphTraverser>> futures = new ArrayList<>();
 
-        AtomicInteger found = new AtomicInteger(0);
+        submitTasks(keys, executorService, futures);
 
-        // Submit tasks for each RHS traversal and store the Future object
+        retrieveResults(futures);
+
+        // Shutdown the executor service after all tasks are complete
+        executorService.shutdown();
+        System.out.printf("Found %d deps :)\n", minimalDependencies.getCount());
+
+        checkHash();
+
+    }
+
+    /**
+     * Submit tasks for each RHS traversal and store the Future object
+     */
+    private void submitTasks(ArrayList<ColumnCollection> keys, ExecutorService executorService, List<Future<GraphTraverser>> futures) {
+        Relation relation = setupRelation();
+
         final int nonFixatedBits = numberOfColumns - PARTITION_FACTOR;
         GraphTraverser traverser = new GraphTraverser(fileBasedPartitions, keys, relation);
         for (int rhsIndex = 0; rhsIndex < numberOfColumns; rhsIndex++) {
             traverser = traverser.copy().setRHS(rhsIndex);
             for (long baseMask = 0; baseMask < 1L << numberOfColumns; baseMask += 1L << nonFixatedBits) {
                 ColumnCollection base = ColumnCollection.fromBits(baseMask);
-                final GraphTraverser localTraverser = traverser = traverser.copy().setBase(base);
 
-                // Must not fixate RHS (i.e. RHS is set in LHS)
+                traverser = traverser.copy().setBase(base);
+
+                // Must not fixate RHS (i.e. RHS is set in every possible LHS)
                 if (base.get(rhsIndex))
                     continue;
 
                 System.out.printf("Starting with RHS %d and fixed base %s\n", rhsIndex, base);
-
-                Future<GraphTraverser> future = executorService.submit(() -> {
-                    localTraverser.run();
-                    found.addAndGet(localTraverser.getDependencies().getCount());
-                    return localTraverser;
-                });
-                futures.add(future);
+                futures.add(executorService.submit(traverser));
             }
         }
+    }
 
-        // Retrieve the results from each Future
-        for (Future<GraphTraverser> future : futures) {
-            try {
-                traverser = future.get();
-                if(!GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
-                    traverser.getDependencies().
-                            forEach((lhs, rhs) -> rhs.stream().
-                                    forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
-                }
-                // This will block until the computation is done and return the result
-            } catch (InterruptedException | ExecutionException e) {
-                // Handle any exceptions that occurred during traversal
-                e.printStackTrace();
-            }
+    private Relation setupRelation() {
+        Relation relation = new Relation(numberOfColumns);
+
+        for (int i = 0; i < PARTITION_FACTOR; i++) {
+            relation.clear(numberOfColumns - 1 - i);
         }
-        if(GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
-            traverser.getDependencies().
-                    forEach((lhs, rhs) -> rhs.stream().
-                            forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
-        }
+        System.out.printf("Partition factor is %d, relation is %s\n", PARTITION_FACTOR, relation);
+        return relation;
+    }
 
-        // Shutdown the executor service after all tasks are complete
-        executorService.shutdown();
-        System.out.printf("Found %d deps :)\n", minimalDependencies.getCount());
-        System.out.printf("Found is %d :)\n", found.get());
-
+    private void checkHash() {
         if(HASH == 0)
             return;
 
@@ -225,7 +215,29 @@ public class DDFDMiner extends Miner implements Runnable {
             throw new RuntimeException("Hashcode is not correct: " + minimalDependencies.hashCode() + " != " + HASH);
         }
         System.out.println("Hashcode is correct :)");
+    }
 
+    private void retrieveResults(List<Future<GraphTraverser>> futures) {
+        try {
+            GraphTraverser traverser = null;
+            for (Future<GraphTraverser> future : futures) {
+                // This will block until the computation is done and return the result
+                traverser = future.get();
+
+                if (!GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
+                    traverser.getDependencies().
+                            forEach((lhs, rhs) -> rhs.stream().
+                                    forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
+                }
+            }
+            if (GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
+                traverser.getDependencies().
+                        forEach((lhs, rhs) -> rhs.stream().
+                                forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
+            }
+        } catch(ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private ArrayList<ColumnCollection> findUniqueColumnCombinations() {
