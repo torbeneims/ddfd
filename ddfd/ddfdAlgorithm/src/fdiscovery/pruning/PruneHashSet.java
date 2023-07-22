@@ -14,7 +14,7 @@ public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollec
 	public PruneHashSet(Relation relation) {
 		super(relation.cardinality());
 		relation.stream()
-				.forEach(columnIndex -> this.put(new ColumnCollection(columnIndex), new HashSet<>()));
+				.forEach(columnIndex -> this.put(ColumnCollection.fromIndices(columnIndex), new HashSet<>()));
 	}
 
 	@Override
