@@ -29,6 +29,7 @@ public class DDFDMiner extends Miner implements Runnable {
     public static int TRAVERSERS_PER_RHS = 1;
     public static String FILE = DDFDMiner.input;
     public static int HASH = 0;
+    public static long RHS_IGNORE_MAP = 0;
 
     public static void main(String[] args) {
         parseCLIArgs(args);
@@ -53,10 +54,6 @@ public class DDFDMiner extends Miner implements Runnable {
             System.out.println(String.format("Number of dependencies:\t%d", Integer.valueOf(dfdRunner.minimalDependencies.getCount())));
             long timeFindFDs = System.currentTimeMillis();
 //            System.out.println(dfdRunner.getDependencies());
-            int hash = dfdRunner.getDependencies().hashCode();
-            if (hash != -1122082685) {
-                throw new RuntimeException("Invalid result, hash is: " + hash);
-            }
             System.out.println("Total time:\t" + (timeFindFDs - timeStart) / 1000.0 + "s");
 
         } catch (FileNotFoundException e) {
@@ -81,6 +78,10 @@ public class DDFDMiner extends Miner implements Runnable {
                     case "--forceconcurrentpartitions":
                     case "-c":
                         GraphTraverser.FORCE_CONCURRENT_PARTITIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--forceconcurrentfunctionaldependencies":
+                    case "-f":
+                        GraphTraverser.FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES = Boolean.parseBoolean(args[++i]);
                         break;
                     case "--sharemfds":
                     case "-m":
@@ -122,6 +123,9 @@ public class DDFDMiner extends Miner implements Runnable {
                     case "-j":
                         TRAVERSERS_PER_RHS = Integer.parseInt(args[++i]);
                         break;
+                    case "--rhsignoremap":
+                        RHS_IGNORE_MAP = Long.parseLong(args[++i], 16);
+                        break;
                     default:
                         System.out.println("Ignored undefined argument: " + args[i]);
                         break;
@@ -137,6 +141,7 @@ public class DDFDMiner extends Miner implements Runnable {
     public static void printSettings() {
         System.out.println("SHARE_PARTITIONS: " + GraphTraverser.SHARE_PARTITIONS);
         System.out.println("FORCE_CONCURRENT_PARTITIONS: " + GraphTraverser.FORCE_CONCURRENT_PARTITIONS);
+        System.out.println("FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES: " + GraphTraverser.FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES);
         System.out.println("SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES: " + GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES);
         System.out.println("SHARE_OBSERVATIONS: " + GraphTraverser.SHARE_OBSERVATIONS);
         System.out.println("SHARE_FUNCTIONAL_DEPENDENCIES: " + GraphTraverser.SHARE_FUNCTIONAL_DEPENDENCIES);
@@ -146,6 +151,10 @@ public class DDFDMiner extends Miner implements Runnable {
         System.out.println("TRAVERSERS_PER_RHS: " + TRAVERSERS_PER_RHS);
         System.out.println("input: " + FILE);
         System.out.println("hash: " + HASH + (HASH == 0 ? " (ignored)" : " (checked)"));
+        System.out.println();
+        System.out.println("USE_CONCURRENT_PARTITIONS(): " + GraphTraverser.USE_CONCURRENT_PARTITIONS());
+        System.out.println("USE_CONCURRENT_FUNCTIONAL_DEPENDENCIES(): " + GraphTraverser.USE_CONCURRENT_FUNCTIONAL_DEPENDENCIES());
+        System.out.format("RHS_IGNORE_MAP: %h\n", RHS_IGNORE_MAP);
     }
 
     public DDFDMiner(SVFileProcessor table) throws OutOfMemoryError {
@@ -193,6 +202,8 @@ public class DDFDMiner extends Miner implements Runnable {
         final int nonFixatedBits = numberOfColumns - PARTITION_FACTOR;
         GraphTraverser traverser = new GraphTraverser(fileBasedPartitions, keys, relation);
         for (int rhsIndex = 0; rhsIndex < numberOfColumns; rhsIndex++) {
+            if(RHS_IGNORE_MAP != 0 && (RHS_IGNORE_MAP & (1 << rhsIndex)) != 0)
+                continue;
             traverser = traverser.copy().setRHS(rhsIndex);
             for (long baseMask = 0; baseMask < 1L << numberOfColumns; baseMask += 1L << nonFixatedBits) {
                 ColumnCollection base = ColumnCollection.fromBits(baseMask);
