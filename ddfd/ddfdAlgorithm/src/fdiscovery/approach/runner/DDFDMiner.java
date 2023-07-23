@@ -172,16 +172,18 @@ public class DDFDMiner extends Miner implements Runnable {
 
         List<Future<GraphTraverser>> futures = new ArrayList<>();
 
-        getTraversers(keys).forEach(traverser -> {
-            assert TRAVERSERS_PER_RHS > 0 : "Traversers needed";
-            for (int i = 0; i < TRAVERSERS_PER_RHS; i++) {
+
+        assert TRAVERSERS_PER_RHS > 0 : "Traversers needed";
+        for (int i = 0; i < TRAVERSERS_PER_RHS; i++) {
+            int finalI = i;
+            getTraversers(keys).forEach(traverser -> {
                 Future<GraphTraverser> future = executorService.submit(traverser);
 
-                // Future traversers hold redundant information
-                if(i == 0)
+                // Further traversers hold redundant information
+                if(finalI == 0)
                     futures.add(future);
-            }
-        });
+            });
+        }
 
         retrieveResults(futures);
 
@@ -211,6 +213,7 @@ public class DDFDMiner extends Miner implements Runnable {
                 traverser = traverser.copy().setBase(base);
 
                 // Must not fixate RHS (i.e. RHS is set in every possible LHS)
+                // TODO For some reason, traverser still finds 15 -> 15 with 15 notin relation
                 if (base.get(rhsIndex))
                     continue;
 
