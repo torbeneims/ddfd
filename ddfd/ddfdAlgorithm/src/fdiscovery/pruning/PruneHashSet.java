@@ -1,20 +1,23 @@
 package fdiscovery.pruning;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
+import fdiscovery.approach.runner.GraphTraverser;
 import fdiscovery.columns.ColumnCollection;
 import fdiscovery.columns.Relation;
 
-public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollection>> implements PruneInterface {
+public class PruneHashSet extends HashMap<ColumnCollection, Collection<ColumnCollection>> implements PruneInterface {
 
 	private static final long serialVersionUID = 8012444410589325434L;
 
 	public PruneHashSet(Relation relation) {
 		super(relation.cardinality());
 		relation.stream()
-				.forEach(columnIndex -> this.put(ColumnCollection.fromIndices(columnIndex), new HashSet<>()));
+				.forEach(columnIndex -> this.put(ColumnCollection.fromIndices(columnIndex), newSecondLayerCollection()));
 	}
 
 	@Override
@@ -38,12 +41,18 @@ public class PruneHashSet extends HashMap<ColumnCollection, HashSet<ColumnCollec
 		} while (rebalancedGroup);
 	}
 
+	protected final Collection<ColumnCollection> newSecondLayerCollection() {
+		return GraphTraverser.USE_CONCURRENT_FUNCTIONAL_DEPENDENCIES() ?
+				new ConcurrentLinkedDeque<>() :
+				new HashSet<>();
+	}
+
 	@Override
 	public void rebalanceGroup(ColumnCollection groupKey, Relation relation) {
-		HashSet<ColumnCollection> depsOfGroup = this.get(groupKey);
+		Collection<ColumnCollection> depsOfGroup = this.get(groupKey);
 		for (int columnIndex : groupKey.complementCopy(relation).getSetBits(relation)) {
 			ColumnCollection newKey = groupKey.setCopy(columnIndex);
-			HashSet<ColumnCollection> newGroup = new HashSet<ColumnCollection>();
+			Collection<ColumnCollection> newGroup = newSecondLayerCollection();
 			this.put(newKey, newGroup);
 
 			for (ColumnCollection depOfGroup : depsOfGroup) {

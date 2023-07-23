@@ -1,6 +1,6 @@
 package fdiscovery.pruning;
 
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Iterator;
 
 import fdiscovery.columns.ColumnCollection;
@@ -42,7 +42,7 @@ public class Dependencies extends PruneHashSet {
 	public void add(ColumnCollection newEntry, Relation relation) {
 		outer: for (ColumnCollection key : this.keySet()) {
 			if (key.isSubsetOf(newEntry)) {
-				HashSet<ColumnCollection> depsForKey = this.get(key);
+				Collection<ColumnCollection> depsForKey = this.get(key);
 				for (Iterator<ColumnCollection> depIt = depsForKey.iterator(); depIt.hasNext(); ) {
 					ColumnCollection dep = depIt.next();
 					if (newEntry.isSupersetOf(dep)) {

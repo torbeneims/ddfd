@@ -46,6 +46,7 @@ public class GraphTraverser implements Callable<GraphTraverser> {
     public static boolean SHARE_PARTITIONS = false;
     /** Whether to use concurrent partitions even if they are not shared */
     public static boolean FORCE_CONCURRENT_PARTITIONS = false;
+    public static boolean FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES = false;
     /** Whether to share minimalDependencies and maximalNonDependencies over RHSs <br/>
      *  Careful: Make sure all traversers have finished before accessing minimalDependencies or maximalNonDependencies */
     public static boolean SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES = false;
@@ -76,6 +77,16 @@ public class GraphTraverser implements Callable<GraphTraverser> {
         this.fileBasedPartitions = fileBasedPartitions;
         this.columnOrder = columnOrder;
         this.keys = keys;
+    }
+
+
+    static boolean USE_CONCURRENT_PARTITIONS() {
+        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS || DDFDMiner.PARTITION_FACTOR > 0;
+    }
+    public static boolean USE_CONCURRENT_FUNCTIONAL_DEPENDENCIES() {
+        return FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES ||
+                SHARE_FUNCTIONAL_DEPENDENCIES ||
+                DDFDMiner.TRAVERSERS_PER_RHS > 1;
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -162,7 +173,7 @@ public class GraphTraverser implements Callable<GraphTraverser> {
     }
 
     private MemoryManagedJoinedPartitions createJoinedPartitions() {
-        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS || DDFDMiner.PARTITION_FACTOR > 0 ?
+        return USE_CONCURRENT_PARTITIONS() ?
                 new ConcurrentMemoryManagedJoinedPartitions(fileBasedPartitions) :
                 new MemoryManagedJoinedPartitions(fileBasedPartitions);
     }
