@@ -198,7 +198,6 @@ public class GraphTraverser implements Callable<GraphTraverser> {
                 if(currentSeed == null) {
                     continue;
                 }
-                System.out.printf("Thread %s on seed %s\n", Thread.currentThread().getId(), currentSeed);
                 do {
                     assert base.isSubsetOf(currentSeed.getIndices()) : "Seed must be a superset of the base";
                     ColumnCollection lhsIndices = currentSeed.getIndices();
