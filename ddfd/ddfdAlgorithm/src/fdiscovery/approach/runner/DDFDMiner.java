@@ -173,10 +173,11 @@ public class DDFDMiner extends Miner implements Runnable {
         List<Future<GraphTraverser>> futures = new ArrayList<>();
 
 
+        Collection<GraphTraverser> traversers = getTraversers(keys);
         assert TRAVERSERS_PER_RHS > 0 : "Traversers needed";
         for (int i = 0; i < TRAVERSERS_PER_RHS; i++) {
             int finalI = i;
-            getTraversers(keys).forEach(traverser -> {
+            traversers.forEach(traverser -> {
                 Future<GraphTraverser> future = executorService.submit(traverser);
 
                 // Further traversers hold redundant information
