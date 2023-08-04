@@ -19,7 +19,7 @@ public class ComposedPartition extends Partition {
 			result = partitions.get(0);
 			
 			for (int i=1; i<partitions.size(); i++) {
-				result = new ComposedPartition(result, partitions.get(i));
+				result = new ComposedPartition(result, partitions.get(i), false);
 			}
 		} else if (partitions.size() == 1) {
 			result = partitions.get(0);
@@ -46,9 +46,13 @@ public class ComposedPartition extends Partition {
 		
 		return joinedPartitions;
 	}
-	
+
 	public ComposedPartition(Partition base, Partition additional) {
-		super(base, additional);
+		this(base, additional, true);
+	}
+	
+	public ComposedPartition(Partition base, Partition additional, boolean trackStatistics) {
+		super(base, additional, trackStatistics);
 
 		if (base.size() > additional.size()) {
 			Partition swap = additional;

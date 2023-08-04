@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import fdiscovery.columns.Relation;
 
@@ -17,6 +18,7 @@ import fdiscovery.general.FunctionalDependencies;
 import fdiscovery.general.Miner;
 import fdiscovery.partitions.FileBasedPartition;
 import fdiscovery.partitions.FileBasedPartitions;
+import fdiscovery.partitions.Partition;
 import fdiscovery.preprocessing.SVFileProcessor;
 
 public class DDFDMiner extends Miner implements Runnable {
@@ -55,6 +57,21 @@ public class DDFDMiner extends Miner implements Runnable {
             long timeFindFDs = System.currentTimeMillis();
 //            System.out.println(dfdRunner.getDependencies());
             System.out.println("Total time:\t" + (timeFindFDs - timeStart) / 1000.0 + "s");
+            System.out.println("Recreation counts:");
+            // average and total (as sum minus count) recreation counts
+            FileBasedPartition.getRecreationCounts().keySet().stream()
+                    .collect(Collectors.groupingBy(ColumnCollection::cardinality,
+                            Collectors.summarizingInt(size -> FileBasedPartition.getRecreationCounts().get(size))))
+                        .forEach((size, stats) -> System.out.println("For size " + size + ", stats are: " + stats));
+
+            System.out.println(FileBasedPartition.getRecreationCounts().values().stream()
+                    .mapToInt(Integer::intValue)
+                    .summaryStatistics()
+                    .toString());
+            Partition.getRecreationCounts().values().stream()
+                            .mapToInt(Integer::intValue)
+                            .average()
+                            .ifPresent(avg -> System.out.println("Average:\t" + avg));
 
         } catch (FileNotFoundException e) {
             System.out.println("The input file could not be found.");

@@ -1,7 +1,12 @@
 package fdiscovery.partitions;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import fdiscovery.columns.ColumnCollection;
 import fdiscovery.equivalence.TEquivalence;
@@ -16,6 +21,8 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 	protected double error;
 	protected double distinctiveness;
 //	protected long hashNumber;
+
+	private static final ConcurrentHashMap<ColumnCollection, AtomicInteger> recreationCountPerInstance = new ConcurrentHashMap<>();
 	
 	public Partition(int columnIndex, int numberOfColumns, int numberOfRows) {
 		this.indices = new ColumnCollection(numberOfColumns);
@@ -23,6 +30,21 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 		this.numberOfRows = numberOfRows;
 		this.error = -1;
 		this.distinctiveness = -1;
+
+		recreationCountPerInstance.computeIfAbsent(this.indices, k -> new AtomicInteger(0)).incrementAndGet();
+	}
+
+	/**
+	 * Retrieves the recreation counts for each column collection.
+	 *
+	 * @return a map containing the column collections as keys and the corresponding recreation counts as values
+	 */
+	public static Map<ColumnCollection, Integer> getRecreationCounts() {
+		return recreationCountPerInstance.entrySet().stream()
+				.collect(Collectors.toMap(
+						Map.Entry::getKey,
+						entry -> entry.getValue().get()
+				));
 	}
 
 	protected int[] getProbeTable() {
@@ -31,11 +53,14 @@ public abstract class Partition extends TreeSet<TEquivalence> implements Compara
 		return probeTable;
 	}
 	
-	public Partition(Partition base, Partition additional) {
+	public Partition(Partition base, Partition additional, boolean trackStatistics) {
 		this.indices = base.indices.orCopy(additional.indices);
 		this.error = -1;
 		this.numberOfRows = base.numberOfRows;
 		this.distinctiveness = -1;
+
+		if(trackStatistics)
+			recreationCountPerInstance.computeIfAbsent(this.indices, k -> new AtomicInteger(0)).incrementAndGet();
 	}
 
 	private void resetProbeTable(int[] probeTable) {
