@@ -212,6 +212,8 @@ public class ColumnCollection extends BitSet implements Comparable<BitSet> {
 		copy.xor(other);
 		int lowestBit = copy.nextSetBit(0);
 		if (lowestBit == -1) {
+			assert this.hashCode() == other.hashCode() :
+					"Hashcodes of equal column collections don't match: " + this + ": " + this.hashCode() + " (this) vs " + other.hashCode();
 			return 0;
 		} else if (this.get(lowestBit)) {
 			return -1;

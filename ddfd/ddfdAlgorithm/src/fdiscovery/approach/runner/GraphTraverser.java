@@ -9,16 +9,19 @@ import fdiscovery.pruning.Seed;
 import gnu.trove.map.hash.TLongObjectHashMap;
 import gnu.trove.set.hash.THashSet;
 
+import javax.ws.rs.core.Link;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class GraphTraverser implements Callable<GraphTraverser> {
+public class GraphTraverser implements Callable<GraphTraverser>, Serializable {
 
     /* Always shared data */
-    private final FileBasedPartitions fileBasedPartitions;
+    private transient final FileBasedPartitions fileBasedPartitions;
     private final ColumnOrder columnOrder;
     private final Collection<ColumnCollection> keys;
 
@@ -36,10 +39,13 @@ public class GraphTraverser implements Callable<GraphTraverser> {
     // ========== SPACE-PARTITIONING LOCAL ==========
     private ColumnCollection base;
     private Relation relation;
-    private ConcurrentLinkedDeque<Seed> seeds;
+    private AtomicReference<ConcurrentLinkedDeque<Seed>> seeds;
+    private volatile boolean isFinished = false;
 
     /* Other data */
+    @Deprecated
     private static final AtomicLong totalTime = new AtomicLong(0);
+    protected static final ConcurrentLinkedDeque<Long> jobTimes = new ConcurrentLinkedDeque<>();
 
     /* Settings */
     /** Whether to share partitions over RHSs */
@@ -81,7 +87,7 @@ public class GraphTraverser implements Callable<GraphTraverser> {
 
 
     static boolean USE_CONCURRENT_PARTITIONS() {
-        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS || DDFDMiner.PARTITION_FACTOR > 0;
+        return SHARE_PARTITIONS || FORCE_CONCURRENT_PARTITIONS || DDFDMiner.PARTITION_FACTOR > 0 || DDFDMiner.TRAVERSERS_PER_RHS > 1;
     }
     public static boolean USE_CONCURRENT_FUNCTIONAL_DEPENDENCIES() {
         return FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES ||
@@ -162,7 +168,7 @@ public class GraphTraverser implements Callable<GraphTraverser> {
 
         /* Necessary resets */
         this.base = base;
-        this.seeds = new ConcurrentLinkedDeque<>();
+        this.seeds = new AtomicReference<>(new ConcurrentLinkedDeque<>());
         generateInitialSeeds(base);
 
         /* Copy relation if it can dynamically change */
@@ -178,13 +184,14 @@ public class GraphTraverser implements Callable<GraphTraverser> {
                 new MemoryManagedJoinedPartitions(fileBasedPartitions);
     }
 
+    /**
+     * Traverses the graph and returns a copy of the GraphTraverser object with the updated data.
+     *
+     * @return this
+     */
     @Override
     public GraphTraverser call() {
-        System.out.printf("Traversing with partitions %s\n", partitions.hashCode());
-
         assert relation.get(rhsIndex) || !base.get(rhsIndex) : "RHS must be in relation";
-
-        System.out.printf("Traversing RHS %d on thread %d\n", rhsIndex, Thread.currentThread().getId());
 
         Deque<Seed> trace = new LinkedList<>();
 
@@ -192,13 +199,9 @@ public class GraphTraverser implements Callable<GraphTraverser> {
 
         // for locking check
         Stack<Seed> prevSeeds = null;
-        do {
-            while (!seeds.isEmpty()) {
-                Seed currentSeed = randomTake();
-                if(currentSeed == null) {
-                    continue;
-                }
-                do {
+        while(seeds.get() != null) {
+            for (Seed currentSeed = randomTake(); currentSeed != null; currentSeed = randomTake()) {
+                for (;currentSeed != null; currentSeed = randomWalkStep(currentSeed, rhsIndex, trace)) {
                     assert base.isSubsetOf(currentSeed.getIndices()) : "Seed must be a superset of the base";
                     ColumnCollection lhsIndices = currentSeed.getIndices();
                     Observation observationOfLHS = observations.get(lhsIndices);
@@ -233,32 +236,34 @@ public class GraphTraverser implements Callable<GraphTraverser> {
                             }
                         }
                     }
-                    currentSeed = randomWalkStep(currentSeed, rhsIndex, trace);
-
-                } while (currentSeed != null);
+                }
             }
-            this.getNextSeeds(rhsIndex, base);
-            assert prevSeeds == null || !new HashSet<>(seeds).containsAll(prevSeeds) : "Stuck at generating seeds: " + seeds.size() + " vs " + prevSeeds.size();
-            prevSeeds = new Stack<>();
-            prevSeeds.addAll(seeds);
-        } while (!seeds.isEmpty());
+            prevSeeds = this.getNextSeeds(rhsIndex, base, prevSeeds);
+        }
 
         final long timeDiff = System.currentTimeMillis() - startTime;
         totalTime.getAndAdd(timeDiff);
-        System.out.printf("Finding %d deps (including RHS -> ?) on RHS %d (Thread %d) took %dms, total %dms\n",
+        jobTimes.add(timeDiff);
+        if(VERBOSE)
+            System.out.printf("Finding %d deps (including RHS -> ?) on RHS %d (Thread %d) took %dms, total %dms\n",
                 minimalDependencies.getCount(), rhsIndex, Thread.currentThread().getId(), timeDiff, totalTime.get());
 
         return this;
     }
 
+    private boolean hasNextSeed() {
+        ConcurrentLinkedDeque<Seed> localSeeds = seeds.get();
+        return localSeeds != null && !localSeeds.isEmpty();
+    }
+
     private void generateInitialSeeds(ColumnCollection base) {
         if(!base.isEmpty()) {
-            seeds.push(new Seed(base));
+            seeds.get().push(new Seed(base));
             return;
         }
         for (int partitionIndex : columnOrder.getOrderHighDistinctCount(relation.clearCopy(rhsIndex), relation)) {
             assert partitionIndex != rhsIndex : "RHS should not be part of the initial seeds (redundant if)";
-            seeds.push(new Seed(base.setCopy(partitionIndex)));
+            seeds.get().push(new Seed(base.setCopy(partitionIndex)));
         }
     }
 
@@ -344,7 +349,14 @@ public class GraphTraverser implements Callable<GraphTraverser> {
         return observationOfLHS;
     }
 
-    private void getNextSeeds(int rhsIndex, ColumnCollection base) {
+    private Stack<Seed> getNextSeeds(int rhsIndex, ColumnCollection base, Stack<Seed> prevSeeds) {
+        ConcurrentLinkedDeque<Seed> oldSeeds = seeds.get();
+        // Early return, a concurrent traverser found that no more seeds exist
+        if(oldSeeds == null) {
+            return prevSeeds;
+        }
+
+        ConcurrentLinkedDeque<Seed> newSeeds = new ConcurrentLinkedDeque<>();
         assert base != null : "Base must not be null";
 //		System.out.println("Find holes");
         Collection<ColumnCollection> deps = new LinkedList<>();
@@ -354,7 +366,8 @@ public class GraphTraverser implements Callable<GraphTraverser> {
 
         // Must not return an empty seed and nothing can be calculated
         if(currentMaximalNonDependencies.isEmpty()) {
-            return;
+            seeds.compareAndSet(oldSeeds, null);
+            return prevSeeds;
         }
 
         deps.add(base);
@@ -377,7 +390,7 @@ public class GraphTraverser implements Callable<GraphTraverser> {
         // dependencies
         deps.removeAll(currentMinimalDependencies);
         for (ColumnCollection remainingSeed : deps) {
-            seeds.push(new Seed(remainingSeed));
+            newSeeds.push(new Seed(remainingSeed));
         }
 
         THashSet<ColumnCollection> prunedSubsets = deps.stream()
@@ -396,15 +409,31 @@ public class GraphTraverser implements Callable<GraphTraverser> {
                 .map(Seed::new)
                 .collect(Collectors.toList());
 
-        assert seeds.isEmpty() || !notPrunedSeeds.isEmpty() : "Only found pruned seeds";
+        assert newSeeds.isEmpty() || !notPrunedSeeds.isEmpty() : "Only found pruned seeds";
 
         if(VERBOSE) {
-            System.out.printf("Got next seeds[0]: %s\ton %s\n",
-                    seeds.isEmpty() ? "[]" : seeds.peek() + ": " + observations.get(seeds.peek().getIndices()) + "(" + seeds.size() + ")",
-                    base);
-            if(!seeds.isEmpty() && observations.get(seeds.peek().getIndices()) == Observation.DEPENDENCY)
-                System.out.printf("directSubsets: %s\n", seeds.peek().getIndices().directSubsets(relation).stream().map(cc -> cc + ": " + observations.get(cc)).collect(Collectors.toList()));
+            System.out.printf("Got next seeds[0] (of size %d): %s\ton %s, thread %d\n",
+                    newSeeds.size(),
+                    newSeeds.isEmpty() ? "[]" : newSeeds.peek() + ": " + observations.get(newSeeds.peek().getIndices()) + "(" + newSeeds.size() + ")",
+                    base,
+                    Thread.currentThread().getId());
+            if(!newSeeds.isEmpty() && observations.get(newSeeds.peek().getIndices()) == Observation.DEPENDENCY)
+                System.out.printf("directSubsets: %s\n", newSeeds.peek().getIndices().directSubsets(relation).stream().map(cc -> cc + ": " + observations.get(cc)).collect(Collectors.toList()));
         }
+
+        if(newSeeds.isEmpty()) {
+            newSeeds = null;
+        }
+        seeds.compareAndSet(oldSeeds, newSeeds);
+
+
+        if(newSeeds == null) return prevSeeds;
+        assert prevSeeds == null ||
+                !new HashSet<>(newSeeds).containsAll(prevSeeds) :
+                "Stuck at generating seeds: " + newSeeds.size() + " vs " + prevSeeds.size();
+        prevSeeds = new Stack<>();
+        prevSeeds.addAll(newSeeds);
+        return prevSeeds;
     }
 
     private ArrayList<ColumnCollection> minimizeSeeds(Collection<ColumnCollection> seeds) {
@@ -494,8 +523,10 @@ public class GraphTraverser implements Callable<GraphTraverser> {
     }
 
     private Seed randomTake() {
-        assert !seeds.isEmpty() : "random take must not be called with empty seeds";
-        return seeds.poll();
+        ConcurrentLinkedDeque<Seed> localSeeds = this.seeds.get();
+        if(localSeeds == null)
+            return null;
+        return localSeeds.poll();
     }
 
     public FunctionalDependencies getDependencies() {

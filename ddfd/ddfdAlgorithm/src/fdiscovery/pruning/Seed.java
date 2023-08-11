@@ -2,7 +2,9 @@ package fdiscovery.pruning;
 
 import fdiscovery.columns.ColumnCollection;
 
-public class Seed {
+import java.io.Serializable;
+
+public class Seed implements Serializable {
 
 	private final ColumnCollection indices;
 	private final int additionalColumnIndex;

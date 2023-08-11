@@ -1,5 +1,6 @@
 package fdiscovery.approach;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,7 +11,7 @@ import fdiscovery.partitions.FileBasedPartition;
 import fdiscovery.partitions.FileBasedPartitions;
 
 // sorts partitions from lowest to highest distinct count
-public class ColumnOrder {
+public class ColumnOrder implements Serializable {
 
 	private final int[] order;
 	

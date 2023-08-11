@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import fdiscovery.columns.Relation;
 
@@ -20,12 +20,16 @@ import fdiscovery.partitions.FileBasedPartition;
 import fdiscovery.partitions.FileBasedPartitions;
 import fdiscovery.partitions.Partition;
 import fdiscovery.preprocessing.SVFileProcessor;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.JavaSparkContext;
 
 public class DDFDMiner extends Miner implements Runnable {
 
     private final int numberOfColumns;
     private final FunctionalDependencies minimalDependencies;
     private final FileBasedPartitions fileBasedPartitions;
+    private final int[] rhsIndices;
     public static int THREADS = 4;
     public static int PARTITION_FACTOR = 0;
     public static int TRAVERSERS_PER_RHS = 1;
@@ -56,28 +60,33 @@ public class DDFDMiner extends Miner implements Runnable {
             System.out.println(String.format("Number of dependencies:\t%d", Integer.valueOf(dfdRunner.minimalDependencies.getCount())));
             long timeFindFDs = System.currentTimeMillis();
 //            System.out.println(dfdRunner.getDependencies());
+            System.out.printf("Task times: %s\n",
+                    GraphTraverser.jobTimes.stream().collect(Collectors.summarizingLong(Long::longValue)));
             System.out.println("Total time:\t" + (timeFindFDs - timeStart) / 1000.0 + "s");
-            System.out.println("Recreation counts:");
-            // average and total (as sum minus count) recreation counts
-            FileBasedPartition.getRecreationCounts().keySet().stream()
-                    .collect(Collectors.groupingBy(ColumnCollection::cardinality,
-                            Collectors.summarizingInt(size -> FileBasedPartition.getRecreationCounts().get(size))))
-                        .forEach((size, stats) -> System.out.println("For size " + size + ", stats are: " + stats));
-
-            System.out.println(FileBasedPartition.getRecreationCounts().values().stream()
-                    .mapToInt(Integer::intValue)
-                    .summaryStatistics()
-                    .toString());
-            Partition.getRecreationCounts().values().stream()
-                            .mapToInt(Integer::intValue)
-                            .average()
-                            .ifPresent(avg -> System.out.println("Average:\t" + avg));
+            //printRecreationCounts();
 
         } catch (FileNotFoundException e) {
             System.out.println("The input file could not be found.");
         } catch (IOException e) {
             System.out.println("The input reader could not be reset.");
         }
+    }
+
+    private static void printRecreationCounts() {
+        System.out.println("Recreation counts:");
+        FileBasedPartition.getRecreationCounts().keySet().stream()
+                .collect(Collectors.groupingBy(ColumnCollection::cardinality,
+                        Collectors.summarizingInt(size -> FileBasedPartition.getRecreationCounts().get(size))))
+                    .forEach((size, stats) -> System.out.println("For size " + size + ", stats are: " + stats));
+
+        System.out.println(FileBasedPartition.getRecreationCounts().values().stream()
+                .mapToInt(Integer::intValue)
+                .summaryStatistics()
+                .toString());
+        Partition.getRecreationCounts().values().stream()
+                        .mapToInt(Integer::intValue)
+                        .average()
+                        .ifPresent(avg -> System.out.println("Average:\t" + avg));
     }
 
     public static void parseCLIArgs(String[] args) {
@@ -175,38 +184,70 @@ public class DDFDMiner extends Miner implements Runnable {
     }
 
     public DDFDMiner(SVFileProcessor table) throws OutOfMemoryError {
+        this(table,
+                IntStream.range(0, table.getNumberOfColumns())
+                .filter(rhsIndex -> RHS_IGNORE_MAP == 0 || (RHS_IGNORE_MAP & (1L << rhsIndex)) == 0)
+                .toArray());
+    }
+
+    public DDFDMiner(SVFileProcessor table, int ...rhsIndices) throws OutOfMemoryError {
         this.numberOfColumns = table.getNumberOfColumns();
         this.minimalDependencies = new FunctionalDependencies();
         this.fileBasedPartitions = new FileBasedPartitions(table);
+
+        this.rhsIndices = rhsIndices;
     }
 
     public void run() throws OutOfMemoryError {
 
         ArrayList<ColumnCollection> keys = findUniqueColumnCombinations();
 
-        // Create an ExecutorService with a thread pool size equal to the number of RHS
-        ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
+        List<GraphTraverser> traversers = getTraversers(keys);
 
-        List<Future<GraphTraverser>> futures = new ArrayList<>();
+        if(false) {
+            // Initialize Spark Context
+//            SparkConf sparkConf = new SparkConf().setAppName("DDFD").setMaster("spark://localhost:7077")
+//                    .set("spark.hadoop.skip", "true")
+//                    .setJars(new String[]{"target/DDFDAlgorithm-1.2-SNAPSHOT.jar"});
+//            JavaSparkContext sc = new JavaSparkContext(sparkConf);
 
+            SparkConf sparkConf = new SparkConf()
+                    .setAppName("DDFD")
+                    .setMaster("spark://localhost:7077")
+                    .setJars(new String[]{"target/DDFDAlgorithm-1.2-SNAPSHOT.jar"});
 
-        Collection<GraphTraverser> traversers = getTraversers(keys);
-        assert TRAVERSERS_PER_RHS > 0 : "Traversers needed";
-        for (int i = 0; i < TRAVERSERS_PER_RHS; i++) {
-            int finalI = i;
-            traversers.forEach(traverser -> {
-                Future<GraphTraverser> future = executorService.submit(traverser);
+            // Create a new Spark Context
+            JavaSparkContext sc = new JavaSparkContext(sparkConf);
 
-                // Further traversers hold redundant information
-                if(finalI == 0)
-                    futures.add(future);
-            });
+            JavaRDD<GraphTraverser> distributedTraversers = sc.parallelize(traversers);
+            List<GraphTraverser> results = distributedTraversers.map(GraphTraverser::call).collect();
+            retrieveResults(results);
+        } else {
+            // Create an ExecutorService with a thread pool size equal to the number of RHS
+            ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
+
+            List<Future<GraphTraverser>> futures = new ArrayList<>();
+            assert TRAVERSERS_PER_RHS > 0 : "Traversers needed";
+            for (int i = 0; i < TRAVERSERS_PER_RHS; i++) {
+                int finalI = i;
+                traversers.forEach(traverser -> {
+                    Future<GraphTraverser> future = executorService.submit(traverser);
+
+                    // Further traversers hold redundant information
+//                    if(finalI == 0)
+                        futures.add(future);
+                });
+            }
+
+            // Shutdown the executor service after all tasks are complete
+            /*try {
+                executorService.awaitTermination(30, TimeUnit.MINUTES);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }*/
+            retrieveResults(unwrap(futures));
+            executorService.shutdown();
         }
-
-        retrieveResults(futures);
-
-        // Shutdown the executor service after all tasks are complete
-        executorService.shutdown();
         System.out.printf("Found %d deps :)\n", minimalDependencies.getCount());
 
         checkHash();
@@ -215,15 +256,13 @@ public class DDFDMiner extends Miner implements Runnable {
     /**
      * Submit tasks for each RHS traversal and store the Future object
      */
-    private Collection<GraphTraverser> getTraversers(ArrayList<ColumnCollection> keys) {
+    private List<GraphTraverser> getTraversers(ArrayList<ColumnCollection> keys) {
         Relation relation = setupRelation();
-        Collection<GraphTraverser> traversers = new ArrayList<>();
+        List<GraphTraverser> traversers = new ArrayList<>();
 
         final int nonFixatedBits = numberOfColumns - PARTITION_FACTOR;
         GraphTraverser traverser = new GraphTraverser(fileBasedPartitions, keys, relation);
-        for (int rhsIndex = 0; rhsIndex < numberOfColumns; rhsIndex++) {
-            if(RHS_IGNORE_MAP != 0 && (RHS_IGNORE_MAP & (1 << rhsIndex)) != 0)
-                continue;
+        for (int rhsIndex : rhsIndices) {
             traverser = traverser.copy().setRHS(rhsIndex);
             for (long baseMask = 0; baseMask < 1L << numberOfColumns; baseMask += 1L << nonFixatedBits) {
                 ColumnCollection base = ColumnCollection.fromBits(baseMask);
@@ -235,7 +274,8 @@ public class DDFDMiner extends Miner implements Runnable {
                 if (base.get(rhsIndex))
                     continue;
 
-                System.out.printf("Starting with RHS %d and fixed base %s\n", rhsIndex, base);
+                if(GraphTraverser.VERBOSE)
+                    System.out.printf("Starting with RHS %d and fixed base %s\n", rhsIndex, base);
                 traversers.add(traverser);
             }
         }
@@ -295,26 +335,37 @@ public class DDFDMiner extends Miner implements Runnable {
         System.out.println("Hashcode is correct :)");
     }
 
-    private void retrieveResults(List<Future<GraphTraverser>> futures) {
-        try {
-            GraphTraverser traverser = null;
-            for (Future<GraphTraverser> future : futures) {
-                // This will block until the computation is done and return the result
-                traverser = future.get();
+    private <T> ArrayList<T> unwrap(Collection<Future<T>> futureList)  {
+        ArrayList<T> resultList = new ArrayList<>();
 
-                if (!GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
-                    traverser.getDependencies().
-                            forEach((lhs, rhs) -> rhs.stream().
-                                    forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
-                }
+        for (Future<T> future : futureList) {
+            try {
+                resultList.add(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
             }
-            if (GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
+        }
+
+        return resultList;
+    }
+
+    private void retrieveResults(List<GraphTraverser> results) {
+        GraphTraverser traverser = null;
+        for (GraphTraverser result : results) {
+            // This will block until the computation is done and return the result
+            traverser = result;
+
+            if (!GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
                 traverser.getDependencies().
                         forEach((lhs, rhs) -> rhs.stream().
                                 forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
             }
-        } catch(ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
+        }
+        if (GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES) {
+            assert traverser != null;
+            traverser.getDependencies().
+                    forEach((lhs, rhs) -> rhs.stream().
+                            forEach(rhsIndex -> minimalDependencies.insertMinimalDependency(lhs, rhsIndex)));
         }
     }
 

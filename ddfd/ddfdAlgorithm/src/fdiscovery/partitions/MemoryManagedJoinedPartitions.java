@@ -18,6 +18,8 @@ public class MemoryManagedJoinedPartitions extends TLongObjectHashMap<Map<Column
 	private LinkedList<ColumnCollection> leastRecentlyUsedPartitions;
 	private TObjectIntHashMap<ColumnCollection> totalCount;
 
+	public MemoryManagedJoinedPartitions() {}
+
 	protected Map<ColumnCollection, Partition> createPartitionMap() {
 		return new HashMap<ColumnCollection, Partition>();
 	}

@@ -7,6 +7,7 @@ import gnu.trove.map.hash.TCharIntHashMap;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 

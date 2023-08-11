@@ -5,17 +5,20 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import fdiscovery.columns.ColumnCollection;
 import gnu.trove.map.hash.THashMap;
 
-public class FunctionalDependencies extends THashMap<ColumnCollection /* LHS */, ColumnCollection /* RHSs */> {
+public class FunctionalDependencies extends ConcurrentHashMap<ColumnCollection /* LHS */, ColumnCollection /* RHSs */> {
 
 	private static final long serialVersionUID = -6781621109409590322L;
 
 	public ArrayList<ColumnCollection> getLHSForRHS(int rhsIndex) {
 		ArrayList<ColumnCollection> lhsForRHS = new ArrayList<>();
 		for (ColumnCollection lhs : this.keySet()) {
+			assert this.containsKey(lhs) : String.format("LHS %s not found in FDs", lhs);
 			if (this.get(lhs).get(rhsIndex)) {
 				lhsForRHS.add(lhs);
 			}
