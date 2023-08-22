@@ -36,6 +36,7 @@ public class DDFDMiner extends Miner implements Runnable {
     public static String FILE = DDFDMiner.input;
     public static int HASH = 0;
     public static long RHS_IGNORE_MAP = 0;
+    public static boolean SHOW_FDS = false;
 
     public static void main(String[] args) {
         parseCLIArgs(args);
@@ -192,6 +193,9 @@ public class DDFDMiner extends Miner implements Runnable {
                     case "--rhsignoremap":
                         RHS_IGNORE_MAP = Long.parseLong(args[++i], 16);
                         break;
+                    case "--showfds":
+                        SHOW_FDS = true;
+                        break;
                     case "--help":
                     case "-?":
                         System.out.println("Usage: java -jar <jarfile> [options]");
@@ -212,6 +216,7 @@ public class DDFDMiner extends Miner implements Runnable {
                                 "-h, --hash [integer]: Set hash of the fds. The execution will fail if this mismatches at the end. Hash is only checked if not set to 0.\n" +
                                 "-j, --traversersperrhs [number]: Set the number of traversers per RHS as the specified number.\n" +
                                 "--rhsignoremap [long]: Set the RHS ignore map as the specified bitmap of columns not to check as RHS.\n" +
+                                "--showfds: Set show FDs as true.\n" +
                                 "\n" +
                                 "Note that most boolean options do not include a single dash (-) before the flag (for backwards compatibility).\n" +
                                 "If any other flag or option is provided, it will be ignored with a warning.\n");
@@ -397,6 +402,8 @@ public class DDFDMiner extends Miner implements Runnable {
             throw new RuntimeException("Hashcode is not correct: " + minimalDependencies.hashCode() + " != " + HASH);
         }
         System.out.println("Hashcode is correct :)");
+
+        System.out.printf("You asked me to print the mFDs, here they are:\n%s\n", minimalDependencies);
     }
 
     private <T> ArrayList<T> unwrap(Collection<Future<T>> futureList)  {
