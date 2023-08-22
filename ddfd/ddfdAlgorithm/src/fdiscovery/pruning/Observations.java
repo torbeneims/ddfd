@@ -1,13 +1,14 @@
 package fdiscovery.pruning;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import fdiscovery.approach.ColumnOrder;
 import fdiscovery.columns.ColumnCollection;
 import fdiscovery.columns.Relation;
 import gnu.trove.set.hash.THashSet;
 
-public class Observations extends HashMap<ColumnCollection, Observation> {
+public class Observations extends ConcurrentHashMap<ColumnCollection, Observation> {
 
 	private static final long serialVersionUID = 2932117192054503664L;
 
