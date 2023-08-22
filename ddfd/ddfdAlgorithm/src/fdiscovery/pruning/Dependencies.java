@@ -43,15 +43,20 @@ public class Dependencies extends PruneHashSet {
 		outer: for (ColumnCollection key : this.keySet()) {
 			if (key.isSubsetOf(newEntry)) {
 				Collection<ColumnCollection> depsForKey = this.get(key);
-				for (Iterator<ColumnCollection> depIt = depsForKey.iterator(); depIt.hasNext(); ) {
-					ColumnCollection dep = depIt.next();
-					if (newEntry.isSupersetOf(dep)) {
-						continue outer;
-					}
-					if (newEntry.isSubsetOf(dep)) {
-						depIt.remove();
-					}
-				}
+
+				boolean doInsert = depsForKey.stream().noneMatch(newEntry::isSupersetOf);
+				if (doInsert)
+					depsForKey.add(newEntry);
+				depsForKey.removeIf(newEntry::isProperSubsetOf);
+//				for (Iterator<ColumnCollection> depIt = depsForKey.iterator(); depIt.hasNext(); ) {
+//					ColumnCollection dep = depIt.next();
+//					if (newEntry.isSupersetOf(dep)) {
+//						continue outer;
+//					}
+//					if (newEntry.isSubsetOf(dep)) {
+//						depIt.remove();
+//					}
+//				}
 				depsForKey.add(newEntry);
 			}
 		}
