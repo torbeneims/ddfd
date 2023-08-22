@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import fdiscovery.approach.runner.GraphTraverser;
@@ -13,7 +14,7 @@ import fdiscovery.columns.Relation;
 /**
  * Each dependency is stored for every attribute it contains (key).
  */
-public class PruneHashSet extends HashMap<ColumnCollection, Collection<ColumnCollection>> implements PruneInterface {
+public class PruneHashSet extends ConcurrentHashMap<ColumnCollection, Collection<ColumnCollection>> implements PruneInterface {
 
 	private static final long serialVersionUID = 8012444410589325434L;
 
