@@ -99,35 +99,75 @@ public class DDFDMiner extends Miner implements Runnable {
                 switch (args[i].toLowerCase()) {
                     case "--sharepartitions":
                     case "-p":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.SHARE_PARTITIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--dosharepartitions":
+                    case "p":
+                        GraphTraverser.SHARE_PARTITIONS = true;
                         break;
                     case "--forceconcurrentpartitions":
                     case "-c":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.FORCE_CONCURRENT_PARTITIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--doforceconcurrentpartitions":
+                    case "c":
+                        GraphTraverser.FORCE_CONCURRENT_PARTITIONS = true;
                         break;
                     case "--forceconcurrentfunctionaldependencies":
                     case "-f":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--doforceconcurrentfunctionaldependencies":
+                    case "f":
+                        GraphTraverser.FORCE_CONCURRENT_FUNCTIONAL_DEPENDENCIES = true;
                         break;
                     case "--sharemfds":
                     case "-m":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--dosharemfds":
+                        GraphTraverser.SHARE_INTEREST_FUNCTIONAL_DEPENDENCIES = true;
                         break;
                     case "--shareobservations":
                     case "-o":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.SHARE_OBSERVATIONS = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--doshareobservations":
+                    case "o":
+                        GraphTraverser.SHARE_OBSERVATIONS = true;
                         break;
                     case "--sharefds":
                     case "-d":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.SHARE_FUNCTIONAL_DEPENDENCIES = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--dosharefds":
+                    case "d":
+                        GraphTraverser.SHARE_FUNCTIONAL_DEPENDENCIES = true;
                         break;
                     case "--sharerelation":
                     case "-r":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.SHARE_RELATION = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--dosharerelation":
+                    case "r":
+                        GraphTraverser.SHARE_RELATION = true;
                         break;
                     case "--verbose":
                     case "-v":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
                         GraphTraverser.VERBOSE = Boolean.parseBoolean(args[++i]);
+                        break;
+                    case "--doverbose":
+                    case "v":
+                        System.out.printf("Use of deprecated argument %s provided for backwards compatibility. Use no-arg boolean flag (with do) instead.\n", args[i]);
+                        GraphTraverser.VERBOSE = true;
                         break;
                     case "--threads":
                     case "-t":
@@ -152,8 +192,32 @@ public class DDFDMiner extends Miner implements Runnable {
                     case "--rhsignoremap":
                         RHS_IGNORE_MAP = Long.parseLong(args[++i], 16);
                         break;
+                    case "--help":
+                    case "-?":
+                        System.out.println("Usage: java -jar <jarfile> [options]");
+                        System.out.println("Options:");
+                        System.out.println("Command-Line Options:\n" +
+                                "\n" +
+                                "p, --dosharepartitions: Enforce the use partitions even if they are not shared.\n" +
+                                "c, --doforceconcurrentpartitions: Enforce the use concurrent partitions even if they are not shared.\n" +
+                                "f, --doforceconcurrentfunctionaldependencies: Enforce the use concurrent functional dependencies even if they are not shared.\n" +
+                                "m, --dosharemfds: Share mFDs/mnFDs between jobs, where applicable.\n" +
+                                "o, --doshareobservations: Share observations between jobs, where applicable.\n" +
+                                "d, --dosharefds: Share FDs between jobs, where applicable.\n" +
+                                "r, --dosharerelation: Whether to share the relation between different bases.\n" +
+                                "v, --doverbose: Show more logging output.\n" +
+                                "-t, --threads [number]: Set the number of threads as the specified number.\n" +
+                                "-s, --partitionfactor [number]: Set the partition factor as the specified number. Default is 0 for one partition.\n" +
+                                "-i, --input [string]: Set the file name to input as the specified string.\n" +
+                                "-h, --hash [integer]: Set hash of the fds. The execution will fail if this mismatches at the end. Hash is only checked if not set to 0.\n" +
+                                "-j, --traversersperrhs [number]: Set the number of traversers per RHS as the specified number.\n" +
+                                "--rhsignoremap [long]: Set the RHS ignore map as the specified bitmap of columns not to check as RHS.\n" +
+                                "\n" +
+                                "Note that most boolean options do not include a single dash (-) before the flag (for backwards compatibility).\n" +
+                                "If any other flag or option is provided, it will be ignored with a warning.\n");
+                        break;
                     default:
-                        System.out.println("Ignored undefined argument: " + args[i]);
+                        System.out.println("Ignored undefined argument: \nUse --help for all options." + args[i]);
                         break;
                 }
             }
