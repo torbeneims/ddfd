@@ -10,6 +10,9 @@ import fdiscovery.approach.runner.GraphTraverser;
 import fdiscovery.columns.ColumnCollection;
 import fdiscovery.columns.Relation;
 
+/**
+ * Each dependency is stored for every attribute it contains (key).
+ */
 public class PruneHashSet extends HashMap<ColumnCollection, Collection<ColumnCollection>> implements PruneInterface {
 
 	private static final long serialVersionUID = 8012444410589325434L;
