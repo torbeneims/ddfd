@@ -1,4 +1,4 @@
-package de.metanome.algorithms.dfd;
+package de.metanome.algorithms.ddfd.ddfdMetanome;
 
 import java.io.File;
 import java.io.IOException;

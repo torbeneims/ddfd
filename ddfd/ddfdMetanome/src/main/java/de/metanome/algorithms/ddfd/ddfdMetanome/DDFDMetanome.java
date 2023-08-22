@@ -1,4 +1,4 @@
-package de.metanome.algorithms.dfd;
+package de.metanome.algorithms.ddfd.ddfdMetanome;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,12 +17,12 @@ import de.metanome.algorithm_integration.input.FileInputGenerator;
 import de.metanome.algorithm_integration.input.RelationalInput;
 import de.metanome.algorithm_integration.result_receiver.FunctionalDependencyResultReceiver;
 import de.metanome.algorithm_integration.results.FunctionalDependency;
-import fdiscovery.approach.runner.DFDMiner;
+import fdiscovery.approach.runner.DDFDMiner;
 import fdiscovery.columns.ColumnCollection;
 import fdiscovery.general.FunctionalDependencies;
 import fdiscovery.preprocessing.SVFileProcessor;
 
-public class DFDMetanome implements FunctionalDependencyAlgorithm,
+public class DDFDMetanome implements FunctionalDependencyAlgorithm,
                                     FileInputParameterAlgorithm {
 
   private FunctionalDependencyResultReceiver resultReceiver;
@@ -35,7 +35,7 @@ public class DFDMetanome implements FunctionalDependencyAlgorithm,
   public void setFileInputConfigurationValue(String identifier,
                                              FileInputGenerator... fileInputGenerators)
       throws AlgorithmConfigurationException {
-    if (DFDMetanome.Identifier.INPUT_FILE.name().equals(identifier)) {
+    if (DDFDMetanome.Identifier.INPUT_FILE.name().equals(identifier)) {
       this.fileInputGenerators = fileInputGenerators;
       this.identifier = identifier;
     }
@@ -52,7 +52,7 @@ public class DFDMetanome implements FunctionalDependencyAlgorithm,
   @Override
   public ArrayList<ConfigurationRequirement<?>> getConfigurationRequirements() {
     ArrayList<ConfigurationRequirement<?>> configs = new ArrayList<>();
-    configs.add(new ConfigurationRequirementFileInput(DFDMetanome.Identifier.INPUT_FILE.name()));
+    configs.add(new ConfigurationRequirementFileInput(DDFDMetanome.Identifier.INPUT_FILE.name()));
     return configs;
   }
 
@@ -68,9 +68,9 @@ public class DFDMetanome implements FunctionalDependencyAlgorithm,
       } catch (IOException e) {
         e.printStackTrace();
       }
-      DFDMiner dfdMiner = new DFDMiner(inputFileProcessor);
-      dfdMiner.run();
-      FunctionalDependencies fds = dfdMiner.getDependencies();
+      DDFDMiner ddfdMiner = new DDFDMiner(inputFileProcessor);
+      ddfdMiner.run();
+      FunctionalDependencies fds = ddfdMiner.getDependencies();
 
       RelationalInput input = fileInput.generateNewCopy();
       String relationName = input.relationName();

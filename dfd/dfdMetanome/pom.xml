@@ -46,7 +46,7 @@
                     <archive>
                         <manifestEntries>
                             <Algorithm-Bootstrap-Class>
-                                de.metanome.algorithms.dfd.DFDMetanome
+                                de.metanome.algorithms.ddfd.ddfdMetanome.DFDMetanome
                             </Algorithm-Bootstrap-Class>
                         </manifestEntries>
                     </archive>
