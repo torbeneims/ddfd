@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -46,6 +47,8 @@ public class GraphTraverser implements Callable<GraphTraverser>, Serializable {
     @Deprecated
     private static final AtomicLong totalTime = new AtomicLong(0);
     protected static final ConcurrentLinkedDeque<Long> jobTimes = new ConcurrentLinkedDeque<>();
+
+    private static final AtomicInteger jobCount = new AtomicInteger(0);
 
     /* Settings */
     /** Whether to share partitions over RHSs */
@@ -193,6 +196,8 @@ public class GraphTraverser implements Callable<GraphTraverser>, Serializable {
     public GraphTraverser call() {
         assert relation.get(rhsIndex) || !base.get(rhsIndex) : "RHS must be in relation";
 
+        System.out.printf("Traversing rhs %d on thread %d (%d/%d job(s) running)\n", rhsIndex, Thread.currentThread().getId(), jobCount.incrementAndGet(), DDFDMiner.THREADS);
+
         Deque<Seed> trace = new LinkedList<>();
 
         long startTime = System.currentTimeMillis();
@@ -248,6 +253,7 @@ public class GraphTraverser implements Callable<GraphTraverser>, Serializable {
             System.out.printf("Finding %d deps (including RHS -> ?) on RHS %d (Thread %d) took %dms, total %dms\n",
                 minimalDependencies.getCount(), rhsIndex, Thread.currentThread().getId(), timeDiff, totalTime.get());
 
+        System.out.printf("Terminating. Running jobs: %d\n", jobCount.decrementAndGet());
         return this;
     }
 
