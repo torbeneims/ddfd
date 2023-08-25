@@ -14,6 +14,17 @@ cut -f 4,3,6,5,32,30,27,28,13,14,15,16,24,33,26 ncvoter.csv > ncvoter15c.csv
 cut -f 4,3,6,5,32,30,27,28,33,26 ncvoter.csv > ncvoter10c.csv
 cut -f 3,6,5,32,30 ncvoter.csv > ncvoter5c.csv
 
+cp uniprot1000kr50c.csv uniprot50c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45 uniprot1000kr50c.csv > uniprot45c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40 uniprot45c.csv > uniprot40c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35 uniprot40c.csv > uniprot35c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 uniprot35c.csv > uniprot30c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25 uniprot35c.csv > uniprot25c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 uniprot25c.csv > uniprot20c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 uniprot20c.csv > uniprot15c.csv
+cut -f 1,2,3,4,5,6,7,8,9,10 uniprot15c.csv > uniprot10c.csv
+cut -f 1,2,3,4,5 uniprot10c.csv > uniprot5c.csv
+
 # rows
 generate_subsets() {
     local base_filename="$1"
@@ -38,4 +49,4 @@ generate_subsets() {
 }
 
 generate_subsets "ncvoter" "	"
-#generate_subsets "lineitem" "${line_counts[@]}" "${col_counts[@]}" ","
+generate_subsets "uniprot" "|"

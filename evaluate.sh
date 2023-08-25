@@ -50,19 +50,19 @@
 
 # Test commands:
 # First, make sure the spark python packages in flake.nix are commented out, then join nix shell:
-#> cd dfd/scripts; ../../nix-portable nix develop
+cd scripts; ../../nix-portable nix develop
 # For running commands that require spark (as indicated):
 # Create a screen for running the command:
 #> screen -RR -D hyperfine
 # Start the master (in background):
-#> cd dfd; ../nix-portable nix develop -c master &
+../nix-portable nix develop -c master &
 # Start the clients (in background):
-#> sh 8_spark_workers.sh
+sh 8_spark_workers.sh
 # Then run your command and clean up by going into htop and killing everything spark
 
 # A
 hyperfine -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -L s 0,1,2 "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data//ncvoter10000r17c.csv -t {t} -s {s} -j 1 p" --show-output --export-json result2.json > result2.log
-
+# ===== Rows =====
 # --- NCVoter ---
 #B
 hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
@@ -73,6 +73,7 @@ hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 hyperfine -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
     "timeout 3h sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
     --show-output --export-json result5.json > result5.log
+
 #H (requires spark)
 hyperfine -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
      "timeout 3h sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" data/ncvoter{r}kr{c}c.csv" \
@@ -82,19 +83,6 @@ hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
     "timeout 3h taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
     --show-output --export-json result7.json > result7.log
 
-# --- Lineitem ---
-#C,E
-hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data/lineitem{r}kr{c}c.csv -t 8 -s 0 -j 1 p" \
-    "timeout 3h taskset -c 0-7 sh run_hyfd.sh \"data/lineitem{r}kr{c}c.csv --separator \\t\""\
-    --show-output --export-json result13.json > result13.log
-
-#G,I (require spark)
-hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 3h sh run_dist_tane.sh data/lineitem{r}kr{c}c_int.json"\
-    "timeout 3h sh run_spark_smartfd.sh data/lineitem{r}kr{c}c_int.json \"\t\" data/lineitem{r}kr{c}c.csv" \
-    --show-output --export-json result14.json > result14.log
-
 # ===== Columns =====
 # --- NCVoter ---
 #J,L
@@ -103,46 +91,40 @@ hyperfine -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
     "timeout 3h taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
     --show-output --export-json result8.json > result8.log
 
-#N (require spark)
+#N (requires spark)
 hyperfine -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
     "timeout 3h sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" data/ncvoter{r}kr{c}c.csv" \
     --show-output --export-json result9.json > result9.log
+
 #P (requires spark) 
 hyperfine -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
     "timeout 3h sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
     --show-output --export-json result10.json > result10.log
-# --- Lineitem ---
+
+# ===== Rows =====
+# --- Uniprot ---
+#C,E
+hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+    "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 1 p" \
+    "timeout 3h taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
+    --show-output --export-json result13.json > result13.log
+
+#G,I (require spark)
+hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+    "timeout 3h sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+    "timeout 3h sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
+    --show-output --export-json result14.json > result14.log
+
+# ===== Columns =====
+# --- Uniprot ---
 #K,M
 hyperfine -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data/lineitem{r}kr{c}c.csv -t 8 -s 0 -j 1 p" \
-    "timeout 3h taskset -c 0-7 sh run_hyfd.sh \"data/lineitem{r}kr{c}c.csv --separator \\t\""\
+    "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 1 p" \
+    "timeout 3h taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
     --show-output --export-json result11.json > result11.log
 
 #O,Q (require spark)
 hyperfine -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 3h sh run_dist_tane.sh data/lineitem{r}kr{c}c_int.json"\
-    "timeout 3h sh run_spark_smartfd.sh data/lineitem{r}kr{c}c_int.json \"\t\" data/lineitem{r}kr{c}c.csv" \
+    "timeout 3h sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+    "timeout 3h sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
     --show-output --export-json result12.json > result12.log
-
-# (reverse lookup)
-wget https://hpi.de/fileadmin/user_upload/fachgebiete/naumann/projekte/repeatability/DataProfiling/FD_Datasets/ncvoter_1001r_19c.csv 
-
-# (unused reverse lookup of result4)
-hyperfine -m 3 -L r 1000,2000,5000,10000,20000,50000,100000,200000,500000,1000000 -L c 17 \
-    "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data/lineitem{r}r{c}c.csv -t 8 -s 0 -j 1 p" \
-    --show-output --export-json result4.json > result4.log
-# (reverse lookup)
-hyperfine -m 2 -M 2 -L t 1,16 "timeout 3h java -ea -jar algorithms/ddfd.jar -i data/adult.csv -t {t} -s 0 -j 1 p" --show-output --export-json result0.json > result0.log
-hyperfine -m 2 -M 2 -L t 1,16 "timeout 3h java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data/ncvoter.csv -t {t} -s 0 -j 1 p" --show-output --export-json result1.json > result1.log
-
-
-# Collect results
-# First uncomment the spark python packages in flake.nix, then join nix shell:
-#> cd ~/dfd/scripts; ../../nix-portable nix develop ..
-
-# Usage: cat input.json | python 2line.py [output_file]
-cat result2.log | node ../log-analyzer2.js | python ../2line.py a_scalability.png
-# Usage: python 3line.py <ddfd_file> <hyfd_file> <tane_file> <smartfd_file> [output_file]
-cat result7.log | python ../hyfd_log_analyzer.py | python3 ../3line.py result3.json result7.json result5.json result6.json bfhd_runtime_over_r.png
-echo | python3 ../8line.py result8.json result8.json result8.json result8.json jlnp_runtime_over_c.png
-
