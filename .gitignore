@@ -1,0 +1,8 @@
+app-*/
+old/*
+result*
+*.png
+columns/
+scripts/data/
+scripts/algorithms/
+scripts/tempPath.tmp/
