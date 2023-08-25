@@ -15,8 +15,8 @@ export numPartitions=8
 
 # Submit Spark job with specified configuration
 spark-submit --master $MASTER_IP \
---executor-memory 32G \
---driver-memory 32G \
+--executor-memory 5G \
+--driver-memory 5G \
 --executor-cores $CORES \
 --conf spark.driver.maxResultSize=20g \
 --conf spark.memory.fraction=0.3 \
