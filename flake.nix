@@ -39,8 +39,46 @@
         fromZipFile = fromFileWithCommand "mkdir -p out && unzip $src && cp *.{csv,txt,tsv} $out";
 
         tpch_version = "3.0.1";
+
+        shellInputs = (with pkgs; [
+              maven
+              jdk17_headless
+              nodejs_20
+
+              hyperfine
+              fish
+              zsh
+              tldr
+            #python311Packages.pyspark
+              stress
+              perf-tools
+
+             (python311.withPackages(ps: with ps; [ requests numpy matplotlib pandas ]))
+
+              (writeShellScriptBin "master" ''
+                spark-class org.apache.spark.deploy.master.Master --host localhost --port 7077 --webui-port 8080
+              '')
+              (writeShellScriptBin "package" ''
+                mvn clean package
+              '')
+              (writeShellScriptBin "client" ''
+                export SPARK_WORKER_DIR=.
+                spark-class org.apache.spark.deploy.worker.Worker spark://localhost:7077 --cores 4
+              '')
+              (writeShellScriptBin "run" ''
+                java -ea -jar target/DDFDAlgorithm-1.2-SNAPSHOT.jar -i data/ncvoters.tsv --rhsignoremap 0 -t 8 --traversersperrhs 1 -s 0 -p true -h 984968711
+              '')
+
+              (writeShellScriptBin "evaluate_ncvoter_ddfd" ''
+                java -ea -jar $ddfd -i $ncvoter --rhsignoremap 0 -t 8 --traversersperrhs 1 -s 0 -j 1 p
+              '')
+
+            ])
+            ++ [ sparkpkgs.spark sparkpkgs.hadoop ];
+
       in with pkgs; rec {
         packages = with stdenv; rec {
+          spark = sparkpkgs.spark;
           dbgen = mkDerivation {
             pname = "dbgen";
             version =  tpch_version;
@@ -177,49 +215,18 @@
               #cp ${tpch-lineitem} $out/lineitem.csv
           };
         };
-        devShell = mkShell {
-          name = "ddfd-evaluation";
-          buildInputs = (with pkgs; [
-            maven
-            jdk8_headless
-            nodejs_20
-
-            hyperfine
-            fish
-            zsh
-            tldr
-            python311Packages.matplotlib
-            python311Packages.requests
-            python311Packages.pandas
-            stress
-            perf-tools
-
-            #        (python311.withPackages(ps: with ps; [ pyspark numpy matplotlib ]))
-            (writeShellScriptBin "master" ''
-              spark-class org.apache.spark.deploy.master.Master --host localhost --port 7077 --webui-port 8080
-            '')
-            (writeShellScriptBin "package" ''
-              mvn clean package
-            '')
-            (writeShellScriptBin "client" ''
-              export SPARK_WORKER_DIR=.
-              spark-class org.apache.spark.deploy.worker.Worker spark://localhost:7077 --cores 4
-            '')
-            (writeShellScriptBin "run" ''
-              java -ea -jar target/DDFDAlgorithm-1.2-SNAPSHOT.jar -i data/ncvoters.tsv --rhsignoremap 0 -t 8 --traversersperrhs 1 -s 0 -p true -h 984968711
-            '')
-
-            (writeShellScriptBin "evaluate_ncvoter_ddfd" ''
-              java -ea -jar $ddfd -i $ncvoter --rhsignoremap 0 -t 8 --traversersperrhs 1 -s 0 -j 1 p
-            '')
-
-          ])
-          ++ (with packages; [ ])
-          ++ [ sparkpkgs.spark ];
-
-          shellHook = ''
-            #fish
-          '';
+        
+        devShells = {
+          default = mkShell {
+            name = "ddfd-evaluation";
+            buildInputs = shellInputs;
+          };
+          pyShell = mkShell {
+            name = "ddfd-evaluation-for-python";
+            buildInputs = shellInputs ++ (with pkgs; [
+              python311Packages.pyspark
+            ]);
+          };
         };
     });
 }

@@ -16,7 +16,7 @@ rl.on('line', line => {
   //const pattern = /Benchmark (\d+)[^]*?-t (\d+)[^]*?-s (\d+)[^]*?-j (\d+)[^]*?Task times: LongSummaryStatistics\{(.+)\}[^§]*?Total time:.*?(\d+\.\d+)s/g;
   const pattern1 = /(\d+):\s([^]*?-t (\d+)[^]*?-s (\d+)[^]*?-j (\d+))/g;
   const pattern2 = /Task times: LongSummaryStatistics\{(.+)\}[^§]*?Total time:.*?(\d+\.\d+)s/g
-  const fdPattern = /Number of dependencies:	(\d+)/
+  const fdPattern = /Number of dependencies:	(\d+)/g
 
   data = data.split("Benchmark")
   result = data.map(str => {
@@ -38,6 +38,10 @@ rl.on('line', line => {
     });
     if(meta.length > 1)
         console.error("ERR! Multiple benchmarks in single benchmark", meta)
+    if(!meta[0]) {
+      console.error("ERR! No meta info found");
+      process.exit(1)
+    }
     meta = meta[0]
 
     let fdcount = [...str.matchAll(fdPattern)].map(match => {

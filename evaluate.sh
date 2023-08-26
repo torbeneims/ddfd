@@ -49,21 +49,22 @@
 # Test R measures DDFDs runtime on 100k17r of ncv, lineitem, uniprot, adult
 
 # Test commands:
+# Run in scripts as sh ../evaluate.sh
 # First, make sure the spark python packages in flake.nix are commented out, then join nix shell: timeout 30m
-cd scripts; ../../nix-portable nix develop
+#../../nix-portable nix develop ..
 # For running commands that require spark (as indicated):
 # Create a screen for running the command:
 #> screen -RR -D hyperfine
 # Start the master (in background):
-../nix-portable nix develop -c master & > spark_master.log
-echo waiting for worker to start
+#../nix-portable nix develop -c master & > spark_master.log
+echo waiting for workers to start
 sleep 5s
 # Start the clients (in background):
-sh 8_spark_workers.sh > spark_clients.log
+#sh 8_spark_workers.sh > spark_clients.log
 # Then run your command and clean up by going into htop and killing everything spark
 
 # A
-#hyperfine -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -L s 0,1,2 "timeout 30m java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data//ncvoter10000r17c.csv -t {t} -s {s} -j 1 p" --show-output --export-json result2.json > result2.log
+hyperfine -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -L s 0,1,2 "timeout 30m java -Xms256g -Xmx256G -ea -jar algorithms/ddfd.jar -i data//ncvoter10000r17c.csv -t {t} -s {s} -j 1 p" --show-output --export-json result2.json > result2.log
 # ===== Rows =====
 # --- NCVoter ---
 #B

@@ -1,0 +1,424 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 274877906944 bytes for committing reserved memory.
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_linux.cpp:2764), pid=2409368, tid=2409369
+#
+# JRE version:  (17.0.7+7) (build )
+# Java VM: OpenJDK 64-Bit Server VM (17.0.7+7-nixos, mixed mode, sharing, tiered, compressed class ptrs, g1 gc, linux-amd64)
+# No core dump will be written. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -Xms256g -Xmx256G -ea algorithms/ddfd.jar -i data/ncvoter1kr17c.csv -t 8 -s 0 -j 1 p
+
+Host: Intel(R) Xeon(R) CPU E5-2670 v2 @ 2.50GHz, 40 cores, 78G, Debian GNU/Linux 11 (bullseye)
+Time: Sat Aug 26 01:14:29 2023 CEST elapsed time: 0.011777 seconds (0d 0h 0m 0s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007f4da8014180):  JavaThread "Unknown thread" [_thread_in_vm, id=2409369, stack(0x00007f4daee17000,0x00007f4daef17000)]
+
+Stack: [0x00007f4daee17000,0x00007f4daef17000],  sp=0x00007f4daef153c0,  free space=1016k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.so+0xee3fb2]  VMError::report_and_die(int, char const*, char const*, __va_list_tag*, Thread*, unsigned char*, void*, void*, char const*, int, unsigned long)+0x1a2
+V  [libjvm.so+0xee4b4d]  VMError::report_and_die(Thread*, char const*, int, unsigned long, VMErrorType, char const*, __va_list_tag*)+0x2d
+V  [libjvm.so+0x605f9c]  report_vm_out_of_memory(char const*, int, unsigned long, VMErrorType, char const*, ...)+0xdc
+V  [libjvm.so+0xc13d5b]  os::pd_commit_memory_or_exit(char*, unsigned long, unsigned long, bool, char const*)+0xeb
+V  [libjvm.so+0xc0d65b]  os::commit_memory_or_exit(char*, unsigned long, unsigned long, bool, char const*)+0x1b
+V  [libjvm.so+0x734116]  G1PageBasedVirtualSpace::commit(unsigned long, unsigned long)+0x66
+V  [libjvm.so+0x748320]  G1RegionsLargerThanCommitSizeMapper::commit_regions(unsigned int, unsigned long, WorkGang*)+0x110
+V  [libjvm.so+0x7d9a48]  HeapRegionManager::commit_regions(unsigned int, unsigned long, WorkGang*)+0x88
+V  [libjvm.so+0x7daa3c]  HeapRegionManager::expand(unsigned int, unsigned int, WorkGang*)+0x2c
+V  [libjvm.so+0x7dac57]  HeapRegionManager::expand_by(unsigned int, WorkGang*)+0x77
+V  [libjvm.so+0x6ed310]  G1CollectedHeap::expand(unsigned long, WorkGang*, double*)+0xe0
+V  [libjvm.so+0x6eda49]  G1CollectedHeap::initialize()+0x6b9
+V  [libjvm.so+0xe928e1]  universe_init()+0xd1
+V  [libjvm.so+0x7fb176]  init_globals()+0x36
+V  [libjvm.so+0xe69680]  Threads::create_vm(JavaVMInitArgs*, bool*)+0x330
+V  [libjvm.so+0x8c3f01]  JNI_CreateJavaVM+0x51
+C  [libjli.so+0x499f]  JavaMain+0x8f
+C  [libjli.so+0x8b89]  ThreadJavaMain+0x9
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007f4db05679c0, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x00007f4da80b5180 GCTaskThread "GC Thread#0" [stack: 0x00007f4dac0c4000,0x00007f4dac1c4000] [id=2409370]
+  0x00007f4da80f6820 ConcurrentGCThread "G1 Main Marker" [stack: 0x00007f4d911b8000,0x00007f4d912b8000] [id=2409371]
+  0x00007f4da80f77a0 ConcurrentGCThread "G1 Conc#0" [stack: 0x00007f4d910b6000,0x00007f4d911b6000] [id=2409372]
+
+[error occurred during error reporting (printing all threads), id 0xb, SIGSEGV (0xb) at pc=0x00007f4daf94b140]
+
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00007f4da8011a60] Heap_lock - owner thread: 0x00007f4da8014180
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 0.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+<Empty>
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x00007f0d90000000, 0x00007f4d90000000)
+  region size 32768K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xb, SIGSEGV (0xb) at pc=0x00007f4dafeff72a]
+
+GC Heap History (0 events):
+No events
+
+Dll operation events (1 events):
+Event: 0.003 Loaded shared library /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+
+Deoptimization events (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Events (1 events):
+Event: 0.003 Protecting memory [0x00007f4daee17000,0x00007f4daee1b000] with protection modes 0
+
+
+Dynamic libraries:
+557c9782c000-557c9782d000 r--p 00000000 09:02 2496591                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/bin/java
+557c9782d000-557c9782e000 r-xp 00001000 09:02 2496591                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/bin/java
+557c9782e000-557c9782f000 r--p 00002000 09:02 2496591                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/bin/java
+557c9782f000-557c97830000 r--p 00002000 09:02 2496591                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/bin/java
+557c97830000-557c97832000 rw-p 00003000 09:02 2496591                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/bin/java
+557c97a49000-557c97a90000 rw-p 00000000 00:00 0                          [heap]
+7f0b20000000-7f0b20021000 rw-p 00000000 00:00 0 
+7f0b20021000-7f0b24000000 ---p 00000000 00:00 0 
+7f0b253f4000-7f0b28021000 rw-p 00000000 00:00 0 
+7f0b28021000-7f0b2c000000 ---p 00000000 00:00 0 
+7f0b2c000000-7f0b2c021000 rw-p 00000000 00:00 0 
+7f0b2c021000-7f0b30000000 ---p 00000000 00:00 0 
+7f0b30000000-7f0d90000000 ---p 00000000 00:00 0 
+7f4d8fcbd000-7f4d910b4000 rw-p 00000000 00:00 0 
+7f4d910b4000-7f4d910b5000 ---p 00000000 00:00 0 
+7f4d910b5000-7f4d911b6000 rw-p 00000000 00:00 0 
+7f4d911b6000-7f4d911b7000 ---p 00000000 00:00 0 
+7f4d911b7000-7f4d914b9000 rw-p 00000000 00:00 0 
+7f4d914b9000-7f4d91729000 rwxp 00000000 00:00 0 
+7f4d91729000-7f4d988d0000 ---p 00000000 00:00 0 
+7f4d988d0000-7f4d98b40000 rwxp 00000000 00:00 0 
+7f4d98b40000-7f4d990a1000 ---p 00000000 00:00 0 
+7f4d990a1000-7f4d99311000 rwxp 00000000 00:00 0 
+7f4d99311000-7f4da04b9000 ---p 00000000 00:00 0 
+7f4da04b9000-7f4da8000000 r--s 00000000 09:02 2497424                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/modules
+7f4da8000000-7f4da817d000 rw-p 00000000 00:00 0 
+7f4da817d000-7f4dac000000 ---p 00000000 00:00 0 
+7f4dac0c2000-7f4dac0c3000 ---p 00000000 00:00 0 
+7f4dac0c3000-7f4daebf7000 rw-p 00000000 00:00 0 
+7f4daebf7000-7f4daecdb000 ---p 00000000 00:00 0 
+7f4daecdb000-7f4daece0000 rw-p 00000000 00:00 0 
+7f4daece0000-7f4daedc4000 ---p 00000000 00:00 0 
+7f4daedc4000-7f4daedc9000 rw-p 00000000 00:00 0 
+7f4daedc9000-7f4daedd4000 ---p 00000000 00:00 0 
+7f4daedd4000-7f4daede2000 r--p 00000000 09:02 2497402                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+7f4daede2000-7f4daedf4000 r-xp 0000e000 09:02 2497402                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+7f4daedf4000-7f4daedfa000 r--p 00020000 09:02 2497402                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+7f4daedfa000-7f4daedfb000 r--p 00025000 09:02 2497402                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+7f4daedfb000-7f4daedfc000 rw-p 00026000 09:02 2497402                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+7f4daedfc000-7f4daedfd000 rw-p 00000000 00:00 0 
+7f4daedfd000-7f4daee03000 rw-p 00031000 09:02 2497402                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjava.so
+7f4daee03000-7f4daee0b000 rw-p 00000000 00:00 0 
+7f4daee0b000-7f4daee0c000 ---p 00000000 00:00 0 
+7f4daee0c000-7f4daee0d000 r--p 00000000 00:00 0 
+7f4daee0d000-7f4daee0e000 ---p 00000000 00:00 0 
+7f4daee0e000-7f4daee10000 r--p 00000000 09:02 2497406                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjimage.so
+7f4daee10000-7f4daee13000 r-xp 00002000 09:02 2497406                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjimage.so
+7f4daee13000-7f4daee14000 r--p 00005000 09:02 2497406                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjimage.so
+7f4daee14000-7f4daee15000 r--p 00006000 09:02 2497406                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjimage.so
+7f4daee15000-7f4daee16000 rw-p 00007000 09:02 2497406                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjimage.so
+7f4daee16000-7f4daee17000 rw-p 0000a000 09:02 2497406                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjimage.so
+7f4daee17000-7f4daee1b000 ---p 00000000 00:00 0 
+7f4daee1b000-7f4daef17000 rw-p 00000000 00:00 0 
+7f4daef17000-7f4daef1b000 r--p 00000000 09:02 1739945                    /nix/store/kbjir9mdrz2w1f7kl4ikisg491x2xd1y-gcc-12.3.0-libgcc/lib/libgcc_s.so.1
+7f4daef1b000-7f4daef32000 r-xp 00004000 09:02 1739945                    /nix/store/kbjir9mdrz2w1f7kl4ikisg491x2xd1y-gcc-12.3.0-libgcc/lib/libgcc_s.so.1
+7f4daef32000-7f4daef36000 r--p 0001b000 09:02 1739945                    /nix/store/kbjir9mdrz2w1f7kl4ikisg491x2xd1y-gcc-12.3.0-libgcc/lib/libgcc_s.so.1
+7f4daef36000-7f4daef37000 r--p 0001e000 09:02 1739945                    /nix/store/kbjir9mdrz2w1f7kl4ikisg491x2xd1y-gcc-12.3.0-libgcc/lib/libgcc_s.so.1
+7f4daef37000-7f4daef38000 rw-p 0001f000 09:02 1739945                    /nix/store/kbjir9mdrz2w1f7kl4ikisg491x2xd1y-gcc-12.3.0-libgcc/lib/libgcc_s.so.1
+7f4daef38000-7f4daef46000 r--p 00000000 09:02 2009499                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libm.so.6
+7f4daef46000-7f4daefba000 r-xp 0000e000 09:02 2009499                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libm.so.6
+7f4daefba000-7f4daf016000 r--p 00082000 09:02 2009499                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libm.so.6
+7f4daf016000-7f4daf017000 r--p 000de000 09:02 2009499                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libm.so.6
+7f4daf017000-7f4daf018000 rw-p 000df000 09:02 2009499                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libm.so.6
+7f4daf018000-7f4daf0b9000 r--p 00000000 09:02 2523856                    /nix/store/4igdc32rmnijcra8y3r1h42987ghzag2-gcc-12.3.0-lib/lib/libstdc++.so.6.0.30
+7f4daf0b9000-7f4daf1c0000 r-xp 000a1000 09:02 2523856                    /nix/store/4igdc32rmnijcra8y3r1h42987ghzag2-gcc-12.3.0-lib/lib/libstdc++.so.6.0.30
+7f4daf1c0000-7f4daf22f000 r--p 001a8000 09:02 2523856                    /nix/store/4igdc32rmnijcra8y3r1h42987ghzag2-gcc-12.3.0-lib/lib/libstdc++.so.6.0.30
+7f4daf22f000-7f4daf23c000 r--p 00217000 09:02 2523856                    /nix/store/4igdc32rmnijcra8y3r1h42987ghzag2-gcc-12.3.0-lib/lib/libstdc++.so.6.0.30
+7f4daf23c000-7f4daf23d000 rw-p 00224000 09:02 2523856                    /nix/store/4igdc32rmnijcra8y3r1h42987ghzag2-gcc-12.3.0-lib/lib/libstdc++.so.6.0.30
+7f4daf23d000-7f4daf240000 rw-p 00000000 00:00 0 
+7f4daf240000-7f4daf241000 r--p 00000000 09:02 2009518                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/librt.so.1
+7f4daf241000-7f4daf242000 r-xp 00001000 09:02 2009518                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/librt.so.1
+7f4daf242000-7f4daf243000 r--p 00002000 09:02 2009518                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/librt.so.1
+7f4daf243000-7f4daf244000 r--p 00002000 09:02 2009518                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/librt.so.1
+7f4daf244000-7f4daf245000 rw-p 00003000 09:02 2009518                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/librt.so.1
+7f4daf245000-7f4daf496000 r--p 00000000 09:02 2497436                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/server/libjvm.so
+7f4daf496000-7f4db01aa000 r-xp 00251000 09:02 2497436                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/server/libjvm.so
+7f4db01aa000-7f4db042b000 r--p 00f65000 09:02 2497436                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/server/libjvm.so
+7f4db042b000-7f4db04e3000 r--p 011e5000 09:02 2497436                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/server/libjvm.so
+7f4db04e3000-7f4db0518000 rw-p 0129d000 09:02 2497436                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/server/libjvm.so
+7f4db0518000-7f4db0572000 rw-p 00000000 00:00 0 
+7f4db0572000-7f4db0575000 rw-p 016b9000 09:02 2497436                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/server/libjvm.so
+7f4db0575000-7f4db0578000 rw-p 00000000 00:00 0 
+7f4db0578000-7f4db059a000 r--p 00000000 09:02 2009492                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libc.so.6
+7f4db059a000-7f4db06f3000 r-xp 00022000 09:02 2009492                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libc.so.6
+7f4db06f3000-7f4db074b000 r--p 0017b000 09:02 2009492                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libc.so.6
+7f4db074b000-7f4db074f000 r--p 001d3000 09:02 2009492                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libc.so.6
+7f4db074f000-7f4db0751000 rw-p 001d7000 09:02 2009492                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libc.so.6
+7f4db0751000-7f4db0760000 rw-p 00000000 00:00 0 
+7f4db0760000-7f4db0761000 r--p 00000000 09:02 2009497                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libdl.so.2
+7f4db0761000-7f4db0762000 r-xp 00001000 09:02 2009497                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libdl.so.2
+7f4db0762000-7f4db0763000 r--p 00002000 09:02 2009497                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libdl.so.2
+7f4db0763000-7f4db0764000 r--p 00002000 09:02 2009497                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libdl.so.2
+7f4db0764000-7f4db0765000 rw-p 00003000 09:02 2009497                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libdl.so.2
+7f4db0765000-7f4db0766000 r--p 00000000 09:02 2009514                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libpthread.so.0
+7f4db0766000-7f4db0767000 r-xp 00001000 09:02 2009514                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libpthread.so.0
+7f4db0767000-7f4db0768000 r--p 00002000 09:02 2009514                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libpthread.so.0
+7f4db0768000-7f4db0769000 r--p 00002000 09:02 2009514                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libpthread.so.0
+7f4db0769000-7f4db076a000 rw-p 00003000 09:02 2009514                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/libpthread.so.0
+7f4db076a000-7f4db076d000 r--p 00000000 09:02 2497407                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjli.so
+7f4db076d000-7f4db0776000 r-xp 00003000 09:02 2497407                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjli.so
+7f4db0776000-7f4db0779000 r--p 0000c000 09:02 2497407                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjli.so
+7f4db0779000-7f4db077a000 r--p 0000f000 09:02 2497407                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjli.so
+7f4db077a000-7f4db077b000 rw-p 00010000 09:02 2497407                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjli.so
+7f4db077b000-7f4db077c000 rw-p 00013000 09:02 2497407                    /nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk/lib/libjli.so
+7f4db077c000-7f4db077f000 r--p 00000000 09:02 4094128                    /nix/store/p9a2nhhpa2dwyw1sy5gr4482ddqmwpkx-zlib-1.2.13/lib/libz.so.1.2.13
+7f4db077f000-7f4db0791000 r-xp 00003000 09:02 4094128                    /nix/store/p9a2nhhpa2dwyw1sy5gr4482ddqmwpkx-zlib-1.2.13/lib/libz.so.1.2.13
+7f4db0791000-7f4db0798000 r--p 00015000 09:02 4094128                    /nix/store/p9a2nhhpa2dwyw1sy5gr4482ddqmwpkx-zlib-1.2.13/lib/libz.so.1.2.13
+7f4db0798000-7f4db0799000 r--p 0001b000 09:02 4094128                    /nix/store/p9a2nhhpa2dwyw1sy5gr4482ddqmwpkx-zlib-1.2.13/lib/libz.so.1.2.13
+7f4db0799000-7f4db079a000 rw-p 0001c000 09:02 4094128                    /nix/store/p9a2nhhpa2dwyw1sy5gr4482ddqmwpkx-zlib-1.2.13/lib/libz.so.1.2.13
+7f4db079a000-7f4db079c000 rw-p 00000000 00:00 0 
+7f4db079c000-7f4db079d000 r--p 00000000 09:02 2009486                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/ld-linux-x86-64.so.2
+7f4db079d000-7f4db07c3000 r-xp 00001000 09:02 2009486                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/ld-linux-x86-64.so.2
+7f4db07c3000-7f4db07cd000 r--p 00027000 09:02 2009486                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/ld-linux-x86-64.so.2
+7f4db07cd000-7f4db07cf000 r--p 00031000 09:02 2009486                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/ld-linux-x86-64.so.2
+7f4db07cf000-7f4db07d1000 rw-p 00033000 09:02 2009486                    /nix/store/ibp4camsx1mlllwzh32yyqcq2r2xsy1a-glibc-2.37-8/lib/ld-linux-x86-64.so.2
+7ffc28bea000-7ffc28c11000 rw-p 00000000 00:00 0                          [stack]
+7ffc28d47000-7ffc28d4b000 r--p 00000000 00:00 0                          [vvar]
+7ffc28d4b000-7ffc28d4d000 r-xp 00000000 00:00 0                          [vdso]
+
+
+VM Arguments:
+jvm_args: -Xms256g -Xmx256G -ea 
+java_command: algorithms/ddfd.jar -i data/ncvoter1kr17c.csv -t 8 -s 0 -j 1 p
+java_class_path (initial): algorithms/ddfd.jar
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 15                                        {product} {ergonomic}
+     uint ConcGCThreads                            = 7                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 28                                        {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 33554432                                  {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 274877906944                              {product} {command line}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 274877906944                              {product} {command line}
+   size_t MinHeapDeltaBytes                        = 33554432                                  {product} {ergonomic}
+   size_t MinHeapSize                              = 274877906944                              {product} {command line}
+    uintx NonNMethodCodeHeapSize                   = 8192380                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 121732930                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 121732930                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+   size_t SoftMaxHeapSize                          = 274877906944                           {manageable} {ergonomic}
+     bool UseCompressedClassPointers               = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+JAVA_HOME=/nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/lib/openjdk
+CLASSPATH=
+PATH=/nix/store/j1q06cyrmmlwr3kkbqlwd06z03zchh8b-patchelf-0.15.0/bin:/nix/store/ygi2qf01dyx5015lqlqshrdh9gqijkxa-gcc-wrapper-12.3.0/bin:/nix/store/yxpdhv0vv17gkg0xxsliimals3ldvbq3-gcc-12.3.0/bin:/nix/store/zz9xg4dp3miyv5w6ss9a1ww622rf73hf-glibc-2.37-8-bin/bin:/nix/store/8fdd0nqajq5sk1m6p4qnn0z0j9d7n3q5-coreutils-9.3/bin:/nix/store/h43yhgahcwif4vnlz3909wpchg1k8zml-binutils-wrapper-2.40/bin:/nix/store/fm1xq4f3g48k1mmwl6qg9jc3ipgfsk1x-binutils-2.40/bin:/nix/store/sq89973l2k7k3hn9ajapfdjs2w8hh8y7-apache-maven-3.9.3/bin:/nix/store/f831syhblqgqmk8qids9xgrqnb43adjy-openjdk-headless-17.0.7+7/bin:/nix/store/i1v52wg379hfnaqk1dir1kfzzywfs58m-nodejs-20.5.1/bin:/nix/store/8c9d36fxl73b69kchb8yyz15hwqqrrag-hyperfine-1.17.0/bin:/nix/store/26f5rij8ajdw5dm1d78wyndwk3v723nr-fish-3.6.1/bin:/nix/store/2hz0i9y0xck9y4pq1rabi0cwk4kylgrw-gnugrep-3.11/bin:/nix/store/zl7fpambb4db6by8mhl9xcmr6n1pp98c-gnused-4.9/bin:/nix/store/530n60ywrgqqvpdilfxa0snw9cr3z59j-groff-1.23.0/bin:/nix/store/a8fh4wbjd8d58vxlj1scy4mwr89dpqya-gettext-0.21.1/bin:/nix/store/g7kb5z3zv0k6x4zj5l4m9yvfh8gbdfxb-man-db-2.11.2/bin:/nix/store/980a1b5hs4fdqdnhr8i3jfl3vr6j27wg-zsh-5.9/bin:/nix/store/7p1cb37cnpwm30w5f7plfxwix8xvax4s-tldr-1.6.0/bin:/nix/store/qsfn0flynplz806an84cdcxv4hw5hap4-stress-1.0.7/bin:/nix/store/a4k4k290rxlf5j6rag20w316rz398vd4-perf-tools-unstable-2017-12-19/bin:/nix/store/nvjpwr4l6i772dpw4cm3jqk63pq4m7ma-python3-3.11.4-env/bin:/nix/store/75599rz175nl78x8vvjp1slbrwpnwk7k-master/bin:/nix/store/0i5h6hy5dbxvsv5dnkp0rwz791rj8kjl-package/bin:/nix/store/fw5d1mh3wsd1j18rll3md2dxv2c6sgkq-client/bin:/nix/store/3qsiix5f1bcggibj08mr19qvbdr1y6wg-run/bin:/nix/store/f5r0bkm76mbqg8bp2zbhhn6y7qcx0z0q-evaluate_ncvoter_ddfd/bin:/nix/store/k3wa5ca3y2glrdk498d38v59hr97f7id-spark-2.2.0/bin:/nix/store/cjx25f4vk8q9xllbqdipyi3sxd8wxkx8-hadoop-2.2.0/bin:/nix/store/8fdd0nqajq5sk1m6p4qnn0z0j9d7n3q5-coreutils-9.3/bin:/nix/store/jids6qqs36p4ds9ghpkcw57kbhp8lbq2-findutils-4.9.0/bin:/nix/store/q0gfc489hnjjg52p7aggbb6q18kfwd20-diffutils-3.10/
+SHELL=/nix/store/ir0j7zqlw9dc49grmwplppc7gh0s40yf-bash-5.2-p15/bin/bash
+LANG=de_DE.UTF-8
+TERM=screen.xterm-256color
+TMPDIR=/tmp/nix-shell.gZx0yh/nix-shell.dZG2zS/nix-shell.EHGgxL/nix-shell.Q6tx0n
+TMP=/tmp/nix-shell.gZx0yh/nix-shell.dZG2zS/nix-shell.EHGgxL/nix-shell.Q6tx0n
+TEMP=/tmp/nix-shell.gZx0yh/nix-shell.dZG2zS/nix-shell.EHGgxL/nix-shell.Q6tx0n
+
+Active Locale:
+LC_ALL=C
+LC_COLLATE=C
+LC_CTYPE=C
+LC_MESSAGES=C
+LC_MONETARY=C
+LC_NUMERIC=C
+LC_TIME=C
+
+Signal Handlers:
+   SIGSEGV: crash_handler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, unblocked
+    SIGBUS: crash_handler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, unblocked
+    SIGFPE: crash_handler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, unblocked
+   SIGPIPE: javaSignalHandler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, blocked
+   SIGXFSZ: javaSignalHandler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, blocked
+    SIGILL: crash_handler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, unblocked
+   SIGUSR2: SR_handler in libjvm.so, mask=00000000000000000000000000000000, flags=SA_RESTART|SA_SIGINFO, blocked
+    SIGHUP: SIG_DFL, mask=00000000000000000000000000000000, flags=none, blocked
+    SIGINT: SIG_DFL, mask=00000000000000000000000000000000, flags=none, blocked
+   SIGTERM: SIG_DFL, mask=00000000000000000000000000000000, flags=none, blocked
+   SIGQUIT: UserHandler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, blocked
+   SIGTRAP: crash_handler in libjvm.so, mask=11100100010111111101111111111110, flags=SA_RESTART|SA_SIGINFO, unblocked
+
+
+---------------  S Y S T E M  ---------------
+
+OS:
+PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"
+NAME="Debian GNU/Linux"
+VERSION_ID="11"
+VERSION="11 (bullseye)"
+VERSION_CODENAME=bullseye
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+uname: Linux 5.10.0-23-amd64 #1 SMP Debian 5.10.179-1 (2023-05-12) x86_64
+OS uptime: 60 days 17:58 hours
+libc: glibc 2.37 NPTL 2.37 
+rlimit (soft/hard): STACK 8192k/infinity , CORE 0k/infinity , NPROC 400/400 , NOFILE 1048576/1048576 , AS infinity/infinity , CPU infinity/infinity , DATA infinity/infinity , FSIZE infinity/infinity , MEMLOCK 10302273k/10302273k
+load average: 1.27 1.59 1.85
+
+/proc/meminfo:
+MemTotal:       82418184 kB
+MemFree:          796004 kB
+MemAvailable:   75419456 kB
+Buffers:         3178116 kB
+Cached:         67628484 kB
+SwapCached:         3832 kB
+Active:         17651804 kB
+Inactive:       57211592 kB
+Active(anon):    2457416 kB
+Inactive(anon):  1590676 kB
+Active(file):   15194388 kB
+Inactive(file): 55620916 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:      41209088 kB
+SwapFree:       38684928 kB
+Dirty:               620 kB
+Writeback:             0 kB
+AnonPages:       4043096 kB
+Mapped:           306864 kB
+Shmem:             15240 kB
+KReclaimable:    4630092 kB
+Slab:            5230840 kB
+SReclaimable:    4630092 kB
+SUnreclaim:       600748 kB
+KernelStack:       25040 kB
+PageTables:        33076 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    82418180 kB
+Committed_AS:   10438236 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:      494540 kB
+VmallocChunk:          0 kB
+Percpu:           570816 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:   3012608 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+FileHugePages:         0 kB
+FilePmdMapped:         0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+Hugetlb:               0 kB
+DirectMap4k:     2376432 kB
+DirectMap2M:    78327808 kB
+DirectMap1G:     5242880 kB
+
+/sys/kernel/mm/transparent_hugepage/enabled: [always] madvise never
+/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter): always defer defer+madvise [madvise] never
+
+Process Memory:
+Virtual Size: 10738528K (peak: 279173972K)
+Resident Set Size: 27544K (peak: 27544K) (anon: 14948K, file: 12596K, shmem: 0K)
+Swapped out: 0K
+C-Heap outstanding allocations: 73512K, retained: 519K
+glibc malloc tunables: (default)
+
+/proc/sys/kernel/threads-max (system-wide limit on the number of threads): 643550
+/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have): 65530
+/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers): 4194304
+
+container (cgroup) information:
+container_type: cgroupv2
+cpu_cpuset_cpus: not supported
+cpu_memory_nodes: not supported
+active_processor_count: 40
+cpu_quota: not supported
+cpu_period: not supported
+cpu_shares: not supported
+memory_limit_in_bytes: unlimited
+memory_and_swap_limit_in_bytes: unlimited
+memory_soft_limit_in_bytes: unlimited
+memory_usage_in_bytes: 42704580 k
+memory_max_usage_in_bytes: not supported
+memory_swap_current_in_bytes: 104 k
+memory_swap_max_limit_in_bytes: unlimited
+maximum number of tasks: unlimited
+current number of tasks: 27
+
+Steal ticks since vm start: 0
+Steal ticks percentage since vm start:  0.000
+
+CPU: total 40 (initial active 40) (10 cores per cpu, 2 threads per core) family 6 model 62 stepping 4 microcode 0x42e, cx8, cmov, fxsr, ht, mmx, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, tsc, tscinvbit, avx, aes, erms, clmul, vzeroupper, clflush
+CPU Model and flags from /proc/cpuinfo:
+model name	: Intel(R) Xeon(R) CPU E5-2670 v2 @ 2.50GHz
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm cpuid_fault epb pti ssbd ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid fsgsbase smep erms xsaveopt dtherm ida arat pln pts md_clear flush_l1d
+
+Online cpus: 0-39
+Offline cpus: 
+BIOS frequency limitation: <Not Available>
+Frequency switch latency (ns): 20000
+Available cpu frequencies: <Not Available>
+Current governor: schedutil
+Core performance/turbo boost: <Not Available>
+
+Memory: 4k page, physical 82418184k(796004k free), swap 41209088k(38684928k free)
+Page Sizes: 4k
+
+vm_info: OpenJDK 64-Bit Server VM (17.0.7+7-nixos) for linux-amd64 JRE (17.0.7+7-nixos), built on Jul 29 2023 02:52:37 by "" with gcc 12.3.0
+
+END.
