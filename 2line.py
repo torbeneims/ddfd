@@ -11,21 +11,22 @@ data = json.load(sys.stdin)
 # Define a color map for different 's' values
 color_map = plt.get_cmap('tab10')
 
-# Group data by 's' values
+# Group data by 's' and 'j' values
 grouped_data = {}
 for entry in data[1:]:
     s_value = entry["meta"]["s"]
-    if s_value not in grouped_data:
-        grouped_data[s_value] = {"t_values": [], "mean_time_values": [], "stdev_time_values": [], "mean_max_values": [], "stdev_max_values": []}
-    grouped_data[s_value]["t_values"].append(entry["meta"]["t"])
-    grouped_data[s_value]["mean_time_values"].append(entry["mean"]["time"])
-    grouped_data[s_value]["stdev_time_values"].append(entry["stdev"]["time"])
-    grouped_data[s_value]["mean_max_values"].append(entry["mean"]["max"] / 1000)  # Divide by 1000
-    grouped_data[s_value]["stdev_max_values"].append(entry["stdev"]["max"] / 1000)  # Divide by 1000
+    j_value = entry["meta"]["j"]  # Get the 'j' value
+    if (s_value, j_value) not in grouped_data:
+        grouped_data[(s_value, j_value)] = {"t_values": [], "mean_time_values": [], "stdev_time_values": [], "mean_max_values": [], "stdev_max_values": []}
+    grouped_data[(s_value, j_value)]["t_values"].append(entry["meta"]["t"])
+    grouped_data[(s_value, j_value)]["mean_time_values"].append(entry["mean"]["time"])
+    grouped_data[(s_value, j_value)]["stdev_time_values"].append(entry["stdev"]["time"])
+    grouped_data[(s_value, j_value)]["mean_max_values"].append(entry["mean"]["max"] / 1000)  # Divide by 1000
+    grouped_data[(s_value, j_value)]["stdev_max_values"].append(entry["stdev"]["max"] / 1000)  # Divide by 1000
 
 # Create a line plot with error bars for both mean time and mean max values
 plt.figure(figsize=(10, 6))
-for i, (s_value, group) in enumerate(grouped_data.items()):
+for i, ((s_value, j_value), group) in enumerate(grouped_data.items()):
     t_values = np.array(group["t_values"])
     mean_time_values = np.array(group["mean_time_values"])
     stdev_time_values = np.array(group["stdev_time_values"])
@@ -36,14 +37,14 @@ for i, (s_value, group) in enumerate(grouped_data.items()):
     color = color_map(i)
     
     # Plot Mean Time with error bars
-    plt.errorbar(t_values, mean_time_values, yerr=stdev_time_values, marker='+', label=f'Mean Time (s={s_value})', color=color)
+    plt.errorbar(t_values, mean_time_values, yerr=stdev_time_values, marker='+', label=f'Mean Time (s={s_value}, j={j_value})', color=color)
     
     # Plot Max. Job Time (renamed) with error bars and reduced saturation (alpha=0.5), using the same color as Mean Time
-    plt.errorbar(t_values, mean_max_values, yerr=stdev_max_values, linestyle='dashed', marker='+', label=f'Max Single Job Time (s={s_value})', color=color, alpha=0.5)
+    plt.errorbar(t_values, mean_max_values, yerr=stdev_max_values, linestyle='dashed', marker='+', label=f'Max Single Job Time (s={s_value}, j={j_value})', color=color, alpha=0.5)
 
 plt.xlabel('# Threads')
 plt.ylabel('Runtime [s] (Log Scale)')
-plt.title('Scalability with the number of threads for different space-partition factors')
+plt.title('Scalability with the number of threads for different space-partition factors and job values')
 plt.legend()
 plt.grid(True)
 

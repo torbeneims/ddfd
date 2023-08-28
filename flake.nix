@@ -56,14 +56,14 @@
              (python311.withPackages(ps: with ps; [ requests numpy matplotlib pandas ]))
 
               (writeShellScriptBin "master" ''
-                spark-class org.apache.spark.deploy.master.Master --host localhost --port 7077 --webui-port 8080
+                spark-class org.apache.spark.deploy.master.Master --host localhost --port 7078 --webui-port 8080
               '')
               (writeShellScriptBin "package" ''
                 mvn clean package
               '')
               (writeShellScriptBin "client" ''
                 export SPARK_WORKER_DIR=.
-                spark-class org.apache.spark.deploy.worker.Worker spark://localhost:7077 --cores 4
+                spark-class org.apache.spark.deploy.worker.Worker spark://localhost:7078 --cores 4
               '')
               (writeShellScriptBin "run" ''
                 java -ea -jar target/DDFDAlgorithm-1.2-SNAPSHOT.jar -i data/ncvoters.tsv --rhsignoremap 0 -t 8 --traversersperrhs 1 -s 0 -p true -h 984968711

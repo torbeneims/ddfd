@@ -20,7 +20,6 @@ rl.on('line', line => {
 
   data = data.split("Benchmark")
   result = data.map(str => {
-
     // Organize the extracted information and format the output
     let meta = [...str.matchAll(pattern1)].map(match => {
         let [, i, command, t, s, j] = match
@@ -39,8 +38,7 @@ rl.on('line', line => {
     if(meta.length > 1)
         console.error("ERR! Multiple benchmarks in single benchmark", meta)
     if(!meta[0]) {
-      console.error("ERR! No meta info found");
-      process.exit(1)
+      return {}
     }
     meta = meta[0]
 

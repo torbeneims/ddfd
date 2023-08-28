@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set your Spark master IP and desired number of cores
-export MASTER_IP=spark://localhost:7077
+export MASTER_IP=spark://localhost:7078
 export CORES=1
 
 # Set your input file path and separator
