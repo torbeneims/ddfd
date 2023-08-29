@@ -66,6 +66,18 @@
 
 >&2 echo A
 # moved A down for a sec 
+
+
+# Conclusions to be drawn:
+# (ob) s significantly increases the runtime due to redundant work
+# (ob) - until a significant number of threads is reached
+# (b) blue is limited by the max single job time
+# (obg) green achieves best scalability, especially with more threads where more workers idle because no jobs are left
+# (bg) - max job time only differs once jobs are actually taken by concurrent workers instead of being almost completed by one worker
+# (-ob) Space-partitioned max job time is around half as long
+# (g/o/r + -b)Max job time of pure rhs partitioning exceeds the total runtime of combined parallization strategies 
+
+
 # ===== Rows =====
 # --- NCVoter ---
 >&2 echo B
@@ -74,9 +86,9 @@
 #   --show-output --export-json result3.json > result3.log
 
 >&2 echo F #(requires spark)
-hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 30m sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
-    --show-output --export-json result5.json > result5.log
+#hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+#    "timeout 90m sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
+#    --show-output --export-json result5_2.json > result5_2.log
 
 >&2 echo H #(requires spark)
 #hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
@@ -90,10 +102,10 @@ hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 # ===== Columns =====
 # --- NCVoter ---
 >&2 echo J,L
-hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/ncvoter{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-    "timeout 30m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
-    --show-output --export-json result8_2.json > result8_2.log
+#hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/ncvoter{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
+#    --show-output --export-json result8_3.json > result8_3.log
+#"timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
 
 >&2 echo N #(requires spark)
 #hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
@@ -102,8 +114,8 @@ hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 
 >&2 echo P #(requires spark) 
 hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 30m sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
-    --show-output --export-json result10_2.json > result10_2.log
+    "timeout 90m sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
+    --show-output --export-json result10_3.json > result10_3.log
 
 
 
@@ -111,8 +123,12 @@ hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 
 # Here we go, there is A:
 
-hyperfine -i -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -L s 0,2 -L j 1,4 "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data//ncvoter100kr17c.csv -t {t} -s {s} -j {j} p" --show-output --export-json result2.json > result2.log
-
+#hyperfine -i -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -L s 0,2 -L j 1,4 \
+#    "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data//ncvoter100kr17c.csv -t {t} -s {s} -j {j} p" \
+#    --show-output --export-json result2.json > result2.log
+#hyperfine -i -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30 -L s 0,4 -L j 1,8 \
+#    "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data//ncvoter100kr17c.csv -t {t} -s {s} -j {j} p" \
+#    --show-output --export-json result30.json > result30.log
 
 
 # don't think we will really get further than here....
@@ -131,26 +147,26 @@ hyperfine -i -m 3 -L t 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,
 # --- Uniprot ---
 >&2 echo C,E
 hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-    "timeout 30m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
+    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
+    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
     --show-output --export-json result13.json > result13.log
 
 >&2 echo G,I #(require spark)
 hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 30m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
-    "timeout 30m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
+    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
     --show-output --export-json result14.json > result14.log
 
 # ===== Columns =====
 # --- Uniprot ---
 >&2 echo K,M
 hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-    "timeout 30m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
+    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
+    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
     --show-output --export-json result11.json > result11.log
 
 >&2 echo O,Q #(require spark)
 hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 30m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
-    "timeout 30m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
+    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
     --show-output --export-json result12.json > result12.log

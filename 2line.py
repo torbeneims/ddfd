@@ -37,7 +37,7 @@ for i, ((s_value, j_value), group) in enumerate(grouped_data.items()):
     color = color_map(i)
     
     # Plot Mean Time with error bars
-    plt.errorbar(t_values, mean_time_values, yerr=stdev_time_values, marker='+', label=f'Mean Time (s={s_value}, j={j_value})', color=color)
+    plt.errorbar(t_values, mean_time_values, yerr=stdev_time_values, marker='+', label=f'Total Runtime (s={s_value}, j={j_value})', color=color)
     
     # Plot Max. Job Time (renamed) with error bars and reduced saturation (alpha=0.5), using the same color as Mean Time
     plt.errorbar(t_values, mean_max_values, yerr=stdev_max_values, linestyle='dashed', marker='+', label=f'Max Single Job Time (s={s_value}, j={j_value})', color=color, alpha=0.5)

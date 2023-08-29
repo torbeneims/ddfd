@@ -225,6 +225,7 @@
             name = "ddfd-evaluation-for-python";
             buildInputs = shellInputs ++ (with pkgs; [
               python311Packages.pyspark
+              texlive.combined.scheme-medium
             ]);
           };
         };
