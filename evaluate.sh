@@ -46,7 +46,7 @@
 >&2 echo H #(requires spark)
 #hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 #     "timeout 30m sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" {c}" \
-#      --show-output --export-json result6.json > result6.log
+#      --show-output --export-json result6_2.json &> result6_2.log
 >&2 echo D
 #hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 #    "timeout 30m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
@@ -54,16 +54,25 @@
 
 # ===== Columns =====
 # --- NCVoter ---
->&2 echo J,L
-#hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-#    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/ncvoter{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-#    --show-output --export-json result8_4.json > result8_4.log
-#"timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
 
 >&2 echo N #(requires spark)
 #hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 #    "timeout 30m sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" {c}" \
-#    --show-output --export-json result9.json > result9.log
+#    --show-output --export-json result9_2.json > result9_2.log
+
+# here's K
+#TODO
+#hyperfine -i -m 3 -M 4 -L r 100 -L c 25,30,35,40,45,50 \
+#    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c_int.csv -t 8 -s 0 -j 4 p" \
+#    --show-output --export-json result11_4.json &> result11_4.log
+
+>&2 echo J,L
+#TODO
+hyperfine -i -m 3 -M 4 -L r 100 -L c 35,40,45,50 \
+    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/ncvoter{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
+    --show-output --export-json result8_5b.json &> result8_5b.log
+# started 20:54
+#"timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
 
 >&2 echo P #(requires spark) 
 #hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
@@ -115,14 +124,12 @@
 
 #hyperfine -m 3 -i -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 #    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \",\" {c}" \
-#    --show-output --export-json result32_2.json > result32_2.log
+#    --show-output --export-json result32_3.json &> result32_3.log
 
 # ===== Columns =====
 # --- Uniprot ---
 >&2 echo K,M
-#hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-#    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c_int.csv -t 8 -s 0 -j 4 p" \
-#    --show-output --export-json result11_3.json > result11_3.log
+#moved K up
 #hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 #    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c_int.csv --separator ,\""\
 #    --show-output --export-json result33_3.json > result33_3.log
@@ -140,9 +147,9 @@
 #hyperfine -m 3 -i -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 #    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
 #    --show-output --export-json result12_3.json > result12_3.log
-hyperfine -m 3 -i -M 4 -L r 100 -L c 25,30,35,40,45,50 \
-    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
-    --show-output --export-json result12_4.json > result12_4.log
+#hyperfine -m 3 -i -M 4 -L r 100 -L c 25,30,35,40,45,50 \
+#    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+#    --show-output --export-json result12_4.json > result12_4.log
 
 # These commands are for testing whether the evaluation commands work:
 #timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot1kr5c.csv -t 8 -s 0 -j 4 p

@@ -50,7 +50,8 @@ timeouts_y = {}
 EXIT_TIMEOUT = 124
 Y_PARAM = "mean"
 
-
+ax2 = None
+isNCV = False
 def plot_metadata():
     # Read additional metadata from stdin
     metadata_input = sys.stdin.read().strip()
@@ -69,6 +70,9 @@ def plot_metadata():
     ax2.plot(metadata_x_values, metadata_fds, linestyle='dashed', color='black', alpha=0.5, label="FDs")
     ax2.set_ylabel("Number of FDs")
     all_labels.append("Number of FDs")
+
+    if max(metadata_fds) < 400:
+        isNCV = True
 
     print(f"Adding fds {metadata_fds}")
     
@@ -93,16 +97,16 @@ def process_input_file(file_path):
 for algorithm, file_path in data_files.items():
     results = process_input_file(file_path)
     filtered_results = [result for result in results if algorithm in result["command"]]
-    mean_runtimes[algorithm] = [result[Y_PARAM] for result in filtered_results if EXIT_TIMEOUT not in result["exit_codes"]]
+    mean_runtimes[algorithm] = [result[Y_PARAM] for result in filtered_results if 0 in result["exit_codes"] and len(set(result["exit_codes"])) == 1]
     timeouts_y[algorithm] = [result[Y_PARAM] for result in filtered_results if EXIT_TIMEOUT in result["exit_codes"]]
 
-    stddevs[algorithm] = [result["stddev"] for result in filtered_results if EXIT_TIMEOUT not in result["exit_codes"]]
+    stddevs[algorithm] = [result["stddev"] for result in filtered_results if 0 in result["exit_codes"] and len(set(result["exit_codes"])) == 1]
 
-    x_values[algorithm] = [int(result["parameters"][X_PARAM]) * X_SCALE for result in filtered_results if EXIT_TIMEOUT not in result["exit_codes"]]
+    x_values[algorithm] = [int(result["parameters"][X_PARAM]) * X_SCALE for result in filtered_results if 0 in result["exit_codes"] and len(set(result["exit_codes"])) == 1]
     timeouts_x[algorithm] = [int(result["parameters"][X_PARAM]) * X_SCALE for result in filtered_results if EXIT_TIMEOUT in result["exit_codes"]]
 
 
-max_y = max([max(y) for y in mean_runtimes.values()])
+max_y = max([max(y) for y in mean_runtimes.values() if len(y) > 0])
 
 # Create the line graph with error bars for each command type
 
@@ -148,18 +152,25 @@ if X_PARAM == "r":
     plt.xscale('log')
     plt.yscale('log')
 
+    #if isNCV:
+    #    plt.yticks([200, 300], [200, 300])
+    #else:
+    #    plt.yticks([500, 1000], [500, 1000])
+
+
     # Set x-axis ticks for 1k, 10k, 100k, and 1M
     plt.xticks([1000, 10000, 100000, 1000000], ["1k", "10k", "100k", "1M"])
 
 
-meta_lines, meta_labels = plot_metadata().get_legend_handles_labels()
+ax2 = plot_metadata()
+meta_lines, meta_labels = ax2.get_legend_handles_labels()
 
 
 # Combine labels from both parts of the code
 #for algorithm, _ in data_files.items():
 #    all_labels.append(f"{algorithm_names[algorithm]}")
 
-plt.grid(True)
+ax.grid(True)
 lines, labels = ax.get_legend_handles_labels()
 plt.legend(lines + meta_lines, labels + meta_labels, loc='upper left')  # Combine the labels from both parts of the code
 

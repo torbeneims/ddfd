@@ -9,7 +9,7 @@ inputPath=$1
 seperator=$2
 
 export tempPath=tempPath.tmp
-export numAttributes=$(awk -F "$seperator" '{print NF; exit}' "$3")
+export numAttributes=$3
 
 export numPartitions=8
 
