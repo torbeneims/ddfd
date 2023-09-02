@@ -26,33 +26,42 @@ public class NonDependencies extends PruneHashSet {
 	}
 	
 	public boolean isRepresented(ColumnCollection value) {
+		acquire();
+
 		for (ColumnCollection keyForGroup : this.keySet()) {
 			if (keyForGroup.isSubsetOf(value)) {
 				for (ColumnCollection nonDependency : this.get(keyForGroup)) {
 					// prune subsets of non-dependencies
 					if (value.isSubsetOf(nonDependency)) {
+						release();
 						return true;
 					}
 				}
 			}
 		}
+		release();
 		return false;
 	}
 	
 	public boolean findSupersetOf(ColumnCollection value) {
+		acquire();
 		for (ColumnCollection keyForGroup : this.keySet()) {
 			if (keyForGroup.isSubsetOf(value)) {
 				for (ColumnCollection valueInGroup : this.get(keyForGroup)) {
 					if (valueInGroup.isSupersetOf(value)) {
+						release();
 						return true;
 					}
 				}
 			}
 		}
+
+		release();
 		return false;
 	}
 
 	public void add(ColumnCollection newEntry, Relation relation) {
+		acquire();
 		outer: for (ColumnCollection key : this.keySet()) {
 			if (key.isSubsetOf(newEntry)) {
 				Collection<ColumnCollection> depsForKey = this.get(key);
@@ -68,6 +77,8 @@ public class NonDependencies extends PruneHashSet {
 				depsForKey.add(newEntry);
 			}
 		}
+
+		release();
 		this.rebalance(relation);
 	}
 }
