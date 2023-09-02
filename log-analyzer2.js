@@ -14,7 +14,7 @@ rl.on('line', line => {
 }).on('close', () => {
   // Define the regex pattern
   //const pattern = /Benchmark (\d+)[^]*?-t (\d+)[^]*?-s (\d+)[^]*?-j (\d+)[^]*?Task times: LongSummaryStatistics\{(.+)\}[^§]*?Total time:.*?(\d+\.\d+)s/g;
-  const pattern1 = /(\d+):\s([^]*?-t (\d+)[^]*?-s (\d+)[^]*?-j (\d+))/g;
+  const pattern1 = /(\d+):\s([^]*?data.?\/(\w+?)(\d+)kr(\d+)c[^]*?-t (\d+)[^]*?-s (\d+)[^]*?-j (\d+))/g;
   const pattern2 = /Task times: LongSummaryStatistics\{(.+)\}[^§]*?Total time:.*?(\d+\.\d+)s/g
   const fdPattern = /Number of dependencies:	(\d+)/g
 
@@ -22,8 +22,10 @@ rl.on('line', line => {
   result = data.map(str => {
     // Organize the extracted information and format the output
     let meta = [...str.matchAll(pattern1)].map(match => {
-        let [, i, command, t, s, j] = match
+        let [, i, command, dataset, r, c, t, s, j] = match
 
+        r = parseInt(r);
+        c = parseInt(c);
         i = parseInt(i);
         t = parseInt(t);
         s = parseInt(s);
@@ -32,7 +34,12 @@ rl.on('line', line => {
         return {
         i,
         command,
-        t, s, j,
+        dataset,
+        r,
+        c,
+        t,
+        s,
+        j,
         };
     });
     if(meta.length > 1)
@@ -44,7 +51,7 @@ rl.on('line', line => {
 
     let fdcount = [...str.matchAll(fdPattern)].map(match => {
       let [, fds] = match
-      return fds;
+      return parseInt(fds);
     })[0];
 
     meta.fds = fdcount;

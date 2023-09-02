@@ -18,8 +18,8 @@ def analyze_fd_log(log_content):
                 mismatched_benchmarks.append(benchmark_number)
             
             # Extract dataset information from the benchmark line
-            dataset_match = re.search(r"Benchmark .*?(data/\w+\d+kr\d+c\.csv)", segment)
-            if dataset_match:
+            dataset_match = re.search(r"Benchmark .*?(data/\w+\d+kr\d+c)", segment)
+            if dataset_match and fd_count_matches:
                 dataset_filename = dataset_match.group(1)
                 rows, columns, dataset = extract_info_from_filename(dataset_filename)
                 
@@ -37,7 +37,7 @@ def analyze_fd_log(log_content):
     return result, mismatched_benchmarks
 
 def extract_info_from_filename(filename):
-    match = re.match(r"data/(\w+?)(\d+)kr(\d+)c\.csv", filename)
+    match = re.match(r"data/(\w+?)(\d+)kr(\d+)c", filename)
     if match:
         r = int(match.group(2))
         c = int(match.group(3))

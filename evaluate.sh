@@ -1,37 +1,4 @@
-# This script evaluates the DDFD algorithm on the following datasets:
-#      Name     |    Type    | #columns  |   #rows 
-# --------------|------------|-----------|----------
-#    Uniprot    | real-world |    223    |   1,000
-#    NCVoter    | real-world |    19     |   1,000     
-#    Adult      | real-world |    14     |   48,842
-#    Homicide   | real-world |    24     |
-#    Flight     | real-world |    20     |  500,000
-#    fd-reduced | synthetic  |    30     |  250,000
-# TCP-H lineitem| synthetic  |
-#    Uniprot2   | real-world |    24     |  569,793  
-
- 
-# Downloads for reproducability (most links are Chrome hightlight links):
-# Uniprot: https://hpi.de/naumann/projects/repeatability/data-profiling/fds.html#:~:text=%3E1545-,uniprot,-uniprot.org
-# Adult: https://hpi.de/naumann/projects/repeatability/data-profiling/fds.html#:~:text=12-,adult,-uci
-# Homicide: https://www.kaggle.com/murderaccountability/homicide-reports/data (account required)
-# fd-reduceed: https://hpi.de/naumann/projects/repeatability/data-profiling/fds.html#:~:text=3-,fd%2Dreduced%2D30,-dbtesma
-# NCVoter: https://hpi.de/naumann/projects/repeatability/data-profiling/fds.html#:~:text=0-,ncvoter,-alt.ncsbe.gov
-# Flight: https://hpi.de/naumann/projects/repeatability/data-profiling/fds.html#:~:text=982631-,flight,-bts.gov
-# TPC-H lineitem: 
-
-
-
-# Uniprot2: https://rest.uniprot.org/uniprotkb/stream?fields=accession%2Creviewed%2Cid%2Cprotein_name%2Cgene_names%2Corganism_name%2Clength%2Corganelle%2Cfragment%2Cerror_gmodel_pred%2Cft_var_seq%2Ccc_alternative_products%2Cmass%2Ccc_rna_editing%2Ccc_polymorphism%2Cft_non_ter%2Cft_non_std%2Cft_non_cons%2Cft_variant%2Ccc_mass_spectrometry%2Csequence%2Ccc_sequence_caution%2Cft_conflict%2Cft_unsure%2Csequence_version&format=tsv&query=%28*%29+AND+%28reviewed%3Atrue%29
-# This includes all reviewd records and the columns Entry Name, Gene Names, Organsm, Protein names, all columns in the sequences section as well as reviewd
-# 
-# 
-# Test 1 shows the runtime on fd-reduced over multiple cores along with the longest job
-# Test 2 compares the runtimes of all datasets over number of threads
-# Test 3 compares the performance on the ncvoter dataset over number of columns with a baseline of 8 cores (also include the number of deps)
-# Test 4 compares the performance on the ncvoter dataset over number of rows with a baseline of 8 cores (also include the number of deps)
-# Test 5 compares the performance on uniprot with 10 and 20 columns for 1,4 and 8 cores
-# Test 6 compares the runtime of ncvoter with hyfd
+# This script evaluates the DDFD algorithm and related algotihms
 
 # Test A compares the runtime over 1-30 (interval 1) threads and s=1,2,3 on ncv1000000r17c with the max job times
 
@@ -48,21 +15,8 @@
 
 # Test R measures DDFDs runtime on 100k17r of ncv, lineitem, uniprot, adult
 
-# Test commands:
-# Run make_datasets.sh first.
-# Run in scripts as sh ../evaluate.sh
-# First, make sure the spark python packages in flake.nix are commented out, then join nix shell: timeout 30m
-#../../nix-portable nix develop ..#default
-# For running commands that require spark (as indicated):
-# Create a screen for running the command:
-#> screen -RR -D hyperfine
-# Start the master (in background):
-#../../nix-portable nix develop ..#default -c master & > spark_master.log
-#echo waiting for workers to start
-#sleep 5s
-# Start the clients (in background):
-#cd ..; sh 8_spark_workers.sh > spark_clients.log
-# Then run your command and clean up by going into htop and killing everything spark
+
+
 
 >&2 echo A
 # moved A down for a sec 
@@ -77,13 +31,12 @@
 # (-ob) Space-partitioned max job time is around half as long
 # (g/o/r + -b)Max job time of pure rhs partitioning exceeds the total runtime of combined parallization strategies 
 
-
 # ===== Rows =====
 # --- NCVoter ---
 >&2 echo B
 #hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 #    "timeout 30m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/ncvoter{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-#   --show-output --export-json result3.json > result3.log
+#   --show-output --export-json result3_2.json > result3_2.log
 
 >&2 echo F #(requires spark)
 #hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
@@ -92,9 +45,9 @@
 
 >&2 echo H #(requires spark)
 #hyperfine -i -m 3 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-#     "timeout 30m sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" data/ncvoter{r}kr{c}c.csv" \
+#     "timeout 30m sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" {c}" \
 #      --show-output --export-json result6.json > result6.log
-#>&2 echo D
+>&2 echo D
 #hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
 #    "timeout 30m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
 #    --show-output --export-json result7.json > result7.log
@@ -104,18 +57,18 @@
 >&2 echo J,L
 #hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 #    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/ncvoter{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-#    --show-output --export-json result8_3.json > result8_3.log
+#    --show-output --export-json result8_4.json > result8_4.log
 #"timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/ncvoter{r}kr{c}c.csv --separator \\t\""\
 
 >&2 echo N #(requires spark)
 #hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-#    "timeout 30m sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" data/ncvoter{r}kr{c}c.csv" \
+#    "timeout 30m sh run_spark_smartfd.sh data/ncvoter{r}kr{c}c_int.json \"\t\" {c}" \
 #    --show-output --export-json result9.json > result9.log
 
 >&2 echo P #(requires spark) 
-hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 90m sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
-    --show-output --export-json result10_3.json > result10_3.log
+#hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#    "timeout 90m sh run_dist_tane.sh data/ncvoter{r}kr{c}c_int.json"\
+#    --show-output --export-json result10_3.json > result10_3.log
 
 
 
@@ -146,27 +99,53 @@ hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
 # ===== Rows =====
 # --- Uniprot ---
 >&2 echo C,E
-hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
-    --show-output --export-json result13.json > result13.log
+#hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+#    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c_int.csv -t 8 -s 0 -j 4 p" \
+#    --show-output --export-json result13_3.json > result13_3.log
+
+#hyperfine -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+#    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c_int.csv --separator ,\""\
+#    --show-output --export-json result31_2.json > result31_2.log
 
 >&2 echo G,I #(require spark)
-hyperfine -i -m 3 -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
-    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
-    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
-    --show-output --export-json result14.json > result14.log
+#hyperfine -m 3 -i -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+#    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+#    --show-output --export-json result14_2.json > result14_2.log
+
+
+#hyperfine -m 3 -i -M 4 -L r 1,2,5,10,20,50,100,200,500,1000 -L c 17 \
+#    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \",\" {c}" \
+#    --show-output --export-json result32_2.json > result32_2.log
 
 # ===== Columns =====
 # --- Uniprot ---
 >&2 echo K,M
-hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
-    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c.csv -t 8 -s 0 -j 4 p" \
-    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c.csv --separator \\t\""\
-    --show-output --export-json result11.json > result11.log
+#hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#    "timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot{r}kr{c}c_int.csv -t 8 -s 0 -j 4 p" \
+#    --show-output --export-json result11_3.json > result11_3.log
+#hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#    "timeout 90m taskset -c 0-7 sh run_hyfd.sh \"data/uniprot{r}kr{c}c_int.csv --separator ,\""\
+#    --show-output --export-json result33_3.json > result33_3.log
 
 >&2 echo O,Q #(require spark)
-hyperfine -i -m 3 -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#hyperfine -m 3 -i -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \",\" {c}" \
+#    --show-output --export-json result34_2.json > result34_2.log
+
+#hyperfine -m 3 -i -M 4 -L r 100 -L c 50 \
+#    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \",\" {c}" \
+#    --show-output --export-json result34_2b.json > result34_2b.log
+# =====> Fails to execute
+
+#hyperfine -m 3 -i -M 4 -L r 100 -L c 5,10,15,20,25,30,35,40,45,50 \
+#    "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
+#    --show-output --export-json result12_3.json > result12_3.log
+hyperfine -m 3 -i -M 4 -L r 100 -L c 25,30,35,40,45,50 \
     "timeout 90m sh run_dist_tane.sh data/uniprot{r}kr{c}c_int.json"\
-    "timeout 90m sh run_spark_smartfd.sh data/uniprot{r}kr{c}c_int.json \"\t\" data/uniprot{r}kr{c}c.csv" \
-    --show-output --export-json result12.json > result12.log
+    --show-output --export-json result12_4.json > result12_4.log
+
+# These commands are for testing whether the evaluation commands work:
+#timeout 90m java -Xms256g -Xmx256G -jar algorithms/ddfd.jar -i data/uniprot1kr5c.csv -t 8 -s 0 -j 4 p
+#timeout 90m taskset -c 0-7 sh run_hyfd.sh "data/uniprot1kr5c.csv --separator ,"
+#timeout 90m sh run_dist_tane.sh data/uniprot1kr5c_int.json
+#timeout 90m sh run_spark_smartfd.sh data/uniprot1kr50c_int.json "," 5 

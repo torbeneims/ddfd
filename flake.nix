@@ -53,7 +53,7 @@
               stress
               perf-tools
 
-             (python311.withPackages(ps: with ps; [ requests numpy matplotlib pandas ]))
+             (python311.withPackages(ps: with ps; [ requests numpy matplotlib pandas tabulate]))
 
               (writeShellScriptBin "master" ''
                 spark-class org.apache.spark.deploy.master.Master --host localhost --port 7078 --webui-port 8080

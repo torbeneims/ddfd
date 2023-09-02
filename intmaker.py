@@ -1,7 +1,8 @@
 import sys
 import csv
+csv.field_size_limit(sys.maxsize)
 
-def build_hash_maps(data, delimiter):
+def build_hash_maps(data):
     hash_maps = {}
     for row in data:
         for col_idx, value in enumerate(row):
@@ -20,19 +21,20 @@ def main(delimiter):
     data = []
     header = None
 
-    for line in sys.stdin:
-        row = line.strip().split(delimiter)
+    input_csv = csv.reader(sys.stdin, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+    for row in input_csv:
         if header is None:
             header = row
         else:
             data.append(row)
 
-    hash_maps = build_hash_maps(data, delimiter)
+    hash_maps = build_hash_maps(data)
     replace_with_index(data, hash_maps)
 
-    print(delimiter.join(header))
+    output_csv = csv.writer(sys.stdout, delimiter=delimiter, quoting=csv.QUOTE_MINIMAL)
+    output_csv.writerow(header)
     for row in data:
-        print(delimiter.join(str(val) for val in row))
+        output_csv.writerow(row)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

@@ -2,34 +2,13 @@ import sys
 import json
 import matplotlib.pyplot as plt
 
-def plot_metadata():
-    # Read additional metadata from stdin
-    metadata_input = sys.stdin.read().strip()
-    try:
-        metadata = json.loads(metadata_input)
-    except json.JSONDecodeError:
-        print("Error decoding JSON metadata from stdin")
-        sys.exit(1)
+all_labels = []
 
-    # Extracting metadata for FDs
-    metadata_r_values = [entry["meta"]["c"] for entry in metadata]
-    metadata_fds = [entry["meta"]["fds"] for entry in metadata]
+meta_lines, meta_labels = [], []
 
-    # Plotting metadata FDs on a new axis
-    ax2 = plt.gca().twinx()
-    ax2.plot(metadata_r_values, metadata_fds, 'o-', color='tab:orange', alpha=0.5, label="FDs")
-    ax2.set_ylabel("Number of FDs")
-    ax2.tick_params(axis='y', labelcolor='tab:orange')
 
-def process_input_file(file_path):
-    with open(file_path, "r") as file:
-        file_data = file.read().strip()
-        try:
-            parsed_data = json.loads(file_data)
-            return parsed_data["results"]
-        except json.JSONDecodeError:
-            print(f"Error decoding JSON data from: {file_path}")
-            return []
+
+
 
 # Process input files from command line arguments
 if len(sys.argv) <5:
@@ -71,6 +50,46 @@ timeouts_y = {}
 EXIT_TIMEOUT = 124
 Y_PARAM = "mean"
 
+
+def plot_metadata():
+    # Read additional metadata from stdin
+    metadata_input = sys.stdin.read().strip()
+    try:
+        metadata = json.loads(metadata_input)
+    except json.JSONDecodeError:
+        print("Error decoding JSON metadata from stdin")
+        sys.exit(1)
+
+    # Extracting metadata for FDs
+    metadata_x_values = [entry["meta"][X_PARAM] * X_SCALE for entry in metadata]
+    metadata_fds = [entry["meta"]["fds"] for entry in metadata]
+
+    # Plotting metadata FDs on a new axis
+    ax2 = plt.gca().twinx()
+    ax2.plot(metadata_x_values, metadata_fds, linestyle='dashed', color='black', alpha=0.5, label="FDs")
+    ax2.set_ylabel("Number of FDs")
+    all_labels.append("Number of FDs")
+
+    print(f"Adding fds {metadata_fds}")
+    
+    ax2.tick_params(axis='y')
+
+    plt.yscale('log')
+
+    return ax2
+
+
+
+def process_input_file(file_path):
+    with open(file_path, "r") as file:
+        file_data = file.read().strip()
+        try:
+            parsed_data = json.loads(file_data)
+            return parsed_data["results"]
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON data from: {file_path}")
+            return []
+
 for algorithm, file_path in data_files.items():
     results = process_input_file(file_path)
     filtered_results = [result for result in results if algorithm in result["command"]]
@@ -86,9 +105,11 @@ for algorithm, file_path in data_files.items():
 max_y = max([max(y) for y in mean_runtimes.values()])
 
 # Create the line graph with error bars for each command type
+
+ax = plt.figure().add_subplot(111)
 for algorithm, _ in data_files.items():
 
-    plt.errorbar(x_values[algorithm], mean_runtimes[algorithm], yerr=stddevs[algorithm], fmt='o-', label=f"{algorithm_names[algorithm]}")
+    ax.errorbar(x_values[algorithm], mean_runtimes[algorithm], yerr=stddevs[algorithm], fmt='o-', label=f"{algorithm_names[algorithm]}")
     #plt.scatter(timeouts_x[algorithm], timeouts_y[algorithm], marker='x')  # 'rx' represents red x markers
 
     # Add red star marker to the last value if a timeout value exists
@@ -107,7 +128,6 @@ for algorithm, _ in data_files.items():
 #            index = i
 #            plt.plot(x, mean_runtimes[command_type][index], 'r*', markersize=10)
 
-#plot_metadata()
 
 if X_PARAM == "c":
     plt.xlabel("Number of Columns")
@@ -132,8 +152,18 @@ if X_PARAM == "r":
     plt.xticks([1000, 10000, 100000, 1000000], ["1k", "10k", "100k", "1M"])
 
 
-plt.legend()
+meta_lines, meta_labels = plot_metadata().get_legend_handles_labels()
+
+
+# Combine labels from both parts of the code
+#for algorithm, _ in data_files.items():
+#    all_labels.append(f"{algorithm_names[algorithm]}")
+
 plt.grid(True)
+lines, labels = ax.get_legend_handles_labels()
+plt.legend(lines + meta_lines, labels + meta_labels, loc='upper left')  # Combine the labels from both parts of the code
+
+
 
 # Save the graph as a PNG image
 plt.savefig(f"{output}.pgf", format='pgf')

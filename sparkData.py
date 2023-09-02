@@ -11,10 +11,10 @@ def convert_csv_to_json(input_csv, output_json, separator):
     df = spark.read.csv(input_csv, header=True, inferSchema=True, sep=separator)
 
     # Add an index column to the DataFrame
-    df_with_index = df.withColumn("index", monotonically_increasing_id())
+    #df_with_index = df.withColumn("index", monotonically_increasing_id())
 
     # Save the DataFrame with index as a JSON file (overwrite)
-    df_with_index.write.mode("overwrite").json(output_json)
+    df.write.mode("overwrite").json(output_json)
 
     # Stop the SparkSession
     spark.stop()

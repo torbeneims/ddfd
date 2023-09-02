@@ -13,9 +13,9 @@ Then copy the files from the `result` link to the `scripts` folder in this repos
 Then run these commands:
 ## Setup
 ```bash
-cd ~/dfd/scripts/data
+
 # Enter dev shell with required python packages
-../nix-portable nix develop .#pyShell # <-- The # before is not a comment
+cd ~/dfd/scripts/data; ../../../nix-portable nix develop ../..#pyShell # <-- The # before is not a comment
 sh ../../make_datasets.sh
 
 # Exit dev shell
@@ -23,18 +23,21 @@ sh ../../make_datasets.sh
 ```
 In different shells, start the spark master and workers:
 ```bash
+screen -RR -D sparkm
 cd ~/dfd; ../nix-portable nix develop .#default -c master & > spark_master.log
+```
+```bash
+screen -RR -D sparkc
 cd ~/dfd; sh 8_spark_workers.sh > spark_clients.log
-``````
+```
 Make sure the workers are only started when necessary, it makes sense to execute the commands in evaluate.sh individually or comment them out
 
 ## Evaluation
 ```bash
 # Start a screen
 screen -RR -D hyperfine
-cd ~/dfd/scripts
 # Enter a different dev shell for evaluation
-../../nix-portable nix develop ..#default
+cd ~/dfd/scripts; ../../nix-portable nix develop ..#default
 sh ../evaluate.sh
 ^d 
 ```
